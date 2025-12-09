@@ -1,0 +1,114 @@
+
+TEST EN POSTMAN
+  TEST 1: Login exitoso
+  - POST http://localhost:8080/api/auth/login
+  - Body: {"email":"juan@example.com","contrasenia":"password123"}
+  - Verificar: Status 200 y que recibes el token
+
+  TEST 2: Acceder a endpoint protegido SIN token (debe dar 403)
+  - GET http://localhost:8080/api/usuarios
+  - Sin header de Authorization
+  - Verificar: Status 403
+
+  TEST 3: Acceder a endpoint protegido CON token (debe funcionar)
+  - GET http://localhost:8080/api/usuarios
+  - Headers: Authorization: Bearer TU_TOKEN
+  - Verificar: Status 200 y recibes la lista de usuarios
+
+  TEST 4: Crear un local con autenticación
+  - POST http://localhost:8080/api/locales
+  - Headers: Authorization: Bearer TU_TOKEN
+  - Body: {"nombre":"Mi Local Test","admin":{"id":2}}
+  - Verificar: Status 201 y que se crea correctamente
+
+  TEST 5: Register nuevo usuario
+  - POST http://localhost:8080/api/auth/register
+  - Body: {"nombre":"Test","apellido":"User","email":"test@example.com","contrasenia":"test123"}
+  - Verificar: Status 201 y recibes token
+
+
+ Endpoints públicos (NO requieren token):
+
+  - POST /api/auth/login - Para iniciar sesión
+  - POST /api/auth/register - Para registrar nuevos usuarios
+  - GET / - Página principal
+
+  Endpoints protegidos (REQUIEREN token JWT):
+
+  - Todos los demás endpoints (/api/usuarios, /api/locales, /api/items, etc.)
+
+  ✅ Usuarios (CREATE, READ, UPDATE, DELETE)
+  ✅ Locales (CREATE, READ, UPDATE, DELETE)
+  ✅ UsuarioLocal (Relación Many-to-Many)
+  ✅ Items (CREATE, READ, UPDATE con préstamos)
+  ✅ Invitaciones (pendientes)
+
+  Repositories (5 files in /repository)
+
+  - UsuarioRepository - includes findByEmail()
+  - LocalRepository - includes findByAdminId()
+  - UsuarioLocalRepository - includes findByUsuarioId(), findByLocalId()
+  - ItemRepository - includes findByUsuarioId(), findByLocalId(), findByPrestadoAId()
+  - InvitacionRepository - includes findByDeId(), findByAId(), findByLocalId(), findByEstado()
+
+  Services (5 files in /service)
+
+  Each service includes:
+  - findAll() - Get all records
+  - findById() - Get by ID
+  - save() - Create or update
+  - deleteById() - Delete by ID
+  - Plus custom finder methods based on repository queries
+
+  Controllers (5 REST controllers in /controller)
+
+  Each controller exposes REST endpoints:
+
+  UsuarioController - /api/usuarios
+
+  - GET /api/usuarios - Get all usuarios
+  - GET /api/usuarios/{id} - Get by ID
+  - GET /api/usuarios/email/{email} - Get by email
+  - POST /api/usuarios - Create usuario
+  - PUT /api/usuarios/{id} - Update usuario
+  - DELETE /api/usuarios/{id} - Delete usuario
+
+  LocalController - /api/locales
+
+  - GET /api/locales - Get all locales
+  - GET /api/locales/{id} - Get by ID
+  - GET /api/locales/admin/{adminId} - Get locales by admin
+  - POST /api/locales - Create local
+  - PUT /api/locales/{id} - Update local
+  - DELETE /api/locales/{id} - Delete local
+
+  UsuarioLocalController - /api/usuario-locales
+
+  - GET /api/usuario-locales - Get all relationships
+  - GET /api/usuario-locales/usuario/{usuarioId} - Get by usuario
+  - GET /api/usuario-locales/local/{localId} - Get by local
+  - POST /api/usuario-locales - Create relationship
+  - DELETE /api/usuario-locales/usuario/{usuarioId}/local/{localId} - Delete relationship
+
+  ItemController - /api/items
+
+  - GET /api/items - Get all items
+  - GET /api/items/{id} - Get by ID
+  - GET /api/items/usuario/{usuarioId} - Get items by owner
+  - GET /api/items/local/{localId} - Get items by local
+  - GET /api/items/prestado/{prestadoAId} - Get loaned items
+  - POST /api/items - Create item
+  - PUT /api/items/{id} - Update item
+  - DELETE /api/items/{id} - Delete item
+
+  InvitacionController - /api/invitaciones
+
+  - GET /api/invitaciones - Get all invitations
+  - GET /api/invitaciones/{id} - Get by ID
+  - GET /api/invitaciones/enviadas/{deId} - Get sent invitations
+  - GET /api/invitaciones/recibidas/{aId} - Get received invitations
+  - GET /api/invitaciones/local/{localId} - Get by local
+  - GET /api/invitaciones/estado/{estado} - Get by status (PENDIENTE/ACEPTADA/RECHAZADA)
+  - POST /api/invitaciones - Create invitation
+  - PUT /api/invitaciones/{id} - Update invitation
+  - DELETE /api/invitaciones/{id} - Delete invitation
