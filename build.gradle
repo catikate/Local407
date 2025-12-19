@@ -28,6 +28,7 @@ dependencies {
 	developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
 	runtimeOnly 'com.mysql:mysql-connector-j'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.boot:spring-boot-test-autoconfigure'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testImplementation 'com.fasterxml.jackson.core:jackson-databind'
 	testRuntimeOnly 'com.h2database:h2'
