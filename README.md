@@ -1,5 +1,11 @@
 # Local407 - Sistema de Gestión de Locales e Items
 
+![CI/CD](https://github.com/catikate/Local407/actions/workflows/ci.yml/badge.svg)
+![Release](https://github.com/catikate/Local407/actions/workflows/release.yml/badge.svg)
+![Tests](https://img.shields.io/badge/tests-77%20passing-brightgreen)
+![Java](https://img.shields.io/badge/Java-25-orange)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.0-green)
+
 API REST para gestión de locales, usuarios, items e invitaciones con autenticación JWT.
 
 ## Stack Tecnológico
@@ -134,17 +140,26 @@ curl -X POST http://localhost:8080/api/items \
 
 ## Testing
 
-**Cobertura:** 15 tests (100% passing)
+**Cobertura:** 77 tests (100% passing)
 
-- **JwtUtilTest** (8 tests) - Generación, validación, extracción de tokens
-- **UsuarioServiceTest** (6 tests) - CRUD con Mockito
-- **Local407ApplicationTests** (1 test) - Context loading con H2
+### Tests Unitarios
+- **Controllers** (23 tests) - AuthController, ReservaController
+- **Services** (47 tests) - Usuario, Reserva, Local, Invitacion, Item, UsuarioLocal
+- **Security** (7 tests) - JwtUtil
 
 ```bash
-./gradlew test                    # Ejecutar todos los tests
-./gradlew test --tests JwtUtilTest  # Test específico
+./gradlew test                       # Ejecutar todos los tests
+./gradlew test --tests JwtUtilTest   # Test específico
 xdg-open build/reports/tests/test/index.html  # Ver reporte
 ```
+
+### CI/CD Automático
+Los tests se ejecutan automáticamente en cada push/PR via GitHub Actions:
+- ✅ Build y compilación
+- ✅ Ejecución de 77 tests con MySQL
+- ✅ Generación de reportes
+- ✅ Construcción de imagen Docker
+- 📦 Release automático con tags (v1.0.0)
 
 ## Seguridad
 
@@ -152,6 +167,39 @@ xdg-open build/reports/tests/test/index.html  # Ver reporte
 - **CSRF:** Deshabilitado (API stateless)
 - **CORS:** Sin configurar (agregar según necesidad)
 - ⚠️ **Producción:** Hashear passwords (BCrypt), cambiar secret, HTTPS, rate limiting
+
+## CI/CD Pipeline
+
+### GitHub Actions Workflows
+
+**CI Pipeline** (push/PR a main/develop):
+- Build automático con Gradle
+- 77 tests unitarios con MySQL
+- Validación de calidad de código
+- Construcción de imagen Docker
+- Artifacts: JAR + reportes de tests
+
+**Release Pipeline** (tags v*.*.*)
+- Creación de release en GitHub
+- Publicación de JAR
+- Build y push de imagen Docker a Docker Hub
+
+### Docker
+
+```bash
+# Build local
+docker build -t local407:latest .
+
+# Run con MySQL
+docker compose up -d
+docker run -p 8080:8080 \
+  -e SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/mydatabase \
+  -e SPRING_DATASOURCE_USERNAME=myuser \
+  -e SPRING_DATASOURCE_PASSWORD=secret \
+  local407:latest
+```
+
+Ver más detalles en [.github/workflows/README.md](.github/workflows/README.md)
 
 ## Repositorio
 
