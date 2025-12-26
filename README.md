@@ -10,10 +10,11 @@ API REST para gestión de locales, usuarios, items e invitaciones con autenticac
 
 ## Stack Tecnológico
 
-**Backend:** Java 25 · Spring Boot 4.0.0 · Spring Data JPA · Spring Security  
-**Database:** MySQL 9.5 · Hibernate ORM · H2 (testing)  
-**Build:** Gradle · Docker Compose  
-**Testing:** JUnit 5 · Mockito · AssertJ (15 tests, 100% passing)
+**Frontend:** React 18 · Vite · React Router · Axios
+**Backend:** Java 25 · Spring Boot 4.0.0 · Spring Data JPA · Spring Security
+**Database:** MySQL 9.5 · Hibernate ORM · H2 (testing)
+**Build:** Gradle · Docker Compose
+**Testing:** JUnit 5 · Mockito · AssertJ (77 tests, 100% passing)
 
 ## Características Principales
 
@@ -50,6 +51,8 @@ src/test/java/
 
 ## Quick Start
 
+### Backend
+
 ```bash
 # 1. Iniciar MySQL
 docker-compose up -d
@@ -67,7 +70,27 @@ jwt.secret=YOUR_SECRET_KEY
 ./gradlew test
 ```
 
-**API URL:** `http://localhost:8080`
+**Backend API:** `http://localhost:8080`
+
+### Frontend
+
+```bash
+# 1. Ir al directorio frontend
+cd frontend
+
+# 2. Instalar dependencias
+npm install
+
+# 3. Configurar .env (ya creado)
+VITE_API_URL=http://localhost:8080
+
+# 4. Ejecutar aplicación
+npm run dev
+```
+
+**Frontend URL:** `http://localhost:5173`
+
+Ver más detalles en [frontend/README.md](frontend/README.md)
 
 ## API Endpoints
 
@@ -165,8 +188,9 @@ Los tests se ejecutan automáticamente en cada push/PR via GitHub Actions:
 
 - **JWT:** Tokens de 10h con HS512
 - **CSRF:** Deshabilitado (API stateless)
-- **CORS:** Sin configurar (agregar según necesidad)
-- ⚠️ **Producción:** Hashear passwords (BCrypt), cambiar secret, HTTPS, rate limiting
+- **CORS:** Configurado para localhost:5173 y localhost:3000
+- **Passwords:** Hasheados con BCrypt
+- ⚠️ **Producción:** Cambiar secret, HTTPS, rate limiting
 
 ## CI/CD Pipeline
 
