@@ -1,0 +1,942 @@
+# Especificaciones del Frontend - Local407 Rent Management
+
+## 🎯 Objetivo del Proyecto
+Sistema web para gestionar locales de ensayo compartidos entre 4 bandas:
+- Control de reservas de sala
+- Inventario de backline compartido
+- Gestión de préstamos de equipo
+- Control de pagos y gastos
+- Gestión de usuarios por local
+
+---
+
+## 🛠️ Stack Tecnológico
+
+### Core
+- **React** 18.2+
+- **React Router** v6
+- **Material-UI (MUI)** v5
+- **Axios** para API calls
+
+### Formularios y Validación
+- **React Hook Form** v7
+- **Yup** para validación de schemas
+
+### Estado Global
+- **Context API** para autenticación
+- **useState/useReducer** para estados locales
+
+### Utilidades
+- **date-fns** o **Day.js** para manejo de fechas
+- **react-big-calendar** para calendario de reservas
+
+---
+
+## 🎨 Referencia de Diseño
+
+### Template Base
+**Material Dashboard 2 React (FREE)**
+- URL: https://www.creative-tim.com/product/material-dashboard-react
+- Descargar y usar como referencia visual
+
+### Inspiración Específica
+- **Login/Register**: https://mui.com/material-ui/getting-started/templates/sign-in/
+- **Dashboard**: https://mui.com/material-ui/getting-started/templates/dashboard/
+- **Tables**: https://mui.com/material-ui/react-table/
+- **Forms**: https://mui.com/material-ui/react-text-field/
+
+### Paleta de Colores
+```javascript
+const theme = {
+  primary: '#1976d2',      // Azul principal
+  secondary: '#dc004e',    // Rosa/Rojo secundario
+  success: '#4caf50',      // Verde para éxitos
+  error: '#f44336',        // Rojo para errores
+  warning: '#ff9800',      // Naranja para warnings
+  info: '#2196f3',         // Azul info
+  background: '#f5f5f5',   // Fondo general
+  paper: '#ffffff',        // Fondo de cards
+  text: {
+    primary: '#212121',
+    secondary: '#757575'
+  }
+}
+```
+
+---
+
+## 🔌 API Backend
+
+### Base URL
+```
+Desarrollo: http://localhost:8080/api
+Producción: https://tu-dominio.com/api
+```
+
+### Autenticación
+Todas las peticiones (excepto login/register) deben incluir:
+```
+Authorization: Bearer {token}
+```
+
+### Endpoints Disponibles
+
+#### 1. Autenticación
+```
+POST /api/auth/register
+Body: {
+  "email": "string",
+  "password": "string",
+  "nombre": "string",
+  "telefono": "string" (opcional)
+}
+Response: {
+  "id": number,
+  "email": "string",
+  "nombre": "string",
+  "role": "string"
+}
+
+POST /api/auth/login
+Body: {
+  "email": "string",
+  "password": "string"
+}
+Response: {
+  "token": "string",
+  "usuario": {
+    "id": number,
+    "email": "string",
+    "nombre": "string",
+    "role": "string"
+  }
+}
+```
+
+#### 2. Usuarios
+```
+GET /api/usuarios
+Response: Array de usuarios
+
+GET /api/usuarios/{id}
+Response: Usuario específico
+
+PUT /api/usuarios/{id}
+Body: Datos a actualizar
+
+DELETE /api/usuarios/{id}
+```
+
+#### 3. Locales
+```
+GET /api/locales
+Response: Array de locales
+
+POST /api/locales
+Body: {
+  "nombre": "string",
+  "direccion": "string",
+  "capacidad": number
+}
+
+GET /api/locales/{id}
+
+PUT /api/locales/{id}
+
+DELETE /api/locales/{id}
+```
+
+#### 4. Items (Backline/Equipamiento)
+```
+GET /api/items
+Query params opcionales:
+  - page: number (default: 0)
+  - size: number (default: 10)
+  - categoria: string
+  - disponible: boolean
+Response: {
+  "content": Array de items,
+  "totalElements": number,
+  "totalPages": number,
+  "number": number (página actual)
+}
+
+POST /api/items
+Body: {
+  "nombre": "string",
+  "descripcion": "string",
+  "categoria": "string",
+  "condicion": "string",
+  "imageUrl": "string" (opcional),
+  "disponiblePrestamo": boolean,
+  "propietarioId": number
+}
+
+GET /api/items/{id}
+
+PUT /api/items/{id}
+
+DELETE /api/items/{id}
+```
+
+#### 5. Usuario-Locales (Relación usuarios con locales)
+```
+GET /api/usuario-locales
+Response: Array de relaciones usuario-local
+
+POST /api/usuario-locales
+Body: {
+  "usuarioId": number,
+  "localId": number,
+  "rol": "string"
+}
+
+GET /api/usuario-locales/{id}
+
+DELETE /api/usuario-locales/{id}
+```
+
+#### 6. Invitaciones
+```
+GET /api/invitaciones
+Response: Array de invitaciones
+
+POST /api/invitaciones
+Body: {
+  "email": "string",
+  "localId": number,
+  "rol": "string"
+}
+
+GET /api/invitaciones/{id}
+
+PUT /api/invitaciones/{id}/aceptar
+
+DELETE /api/invitaciones/{id}
+```
+
+---
+
+## 📁 Estructura de Carpetas
+```
+src/
+├── components/
+│   ├── common/
+│   │   ├── Navbar.jsx              # Barra superior con logo y usuario
+│   │   ├── Sidebar.jsx             # Menú lateral de navegación
+│   │   ├── Footer.jsx              # Pie de página
+│   │   ├── LoadingSpinner.jsx      # Spinner de carga
+│   │   └── ErrorBoundary.jsx       # Manejo de errores
+│   │
+│   ├── auth/
+│   │   ├── LoginForm.jsx           # Formulario de login
+│   │   ├── RegisterForm.jsx        # Formulario de registro
+│   │   └── ProtectedRoute.jsx      # HOC para rutas protegidas
+│   │
+│   ├── items/
+│   │   ├── ItemCard.jsx            # Card individual de item
+│   │   ├── ItemList.jsx            # Grid/Lista de items
+│   │   ├── ItemForm.jsx            # Formulario crear/editar item
+│   │   ├── ItemDetail.jsx          # Detalle completo del item
+│   │   └── ItemFilters.jsx         # Filtros de búsqueda
+│   │
+│   ├── locales/
+│   │   ├── LocalCard.jsx           # Card de local
+│   │   ├── LocalList.jsx           # Lista de locales
+│   │   ├── LocalForm.jsx           # Formulario de local
+│   │   └── LocalDetail.jsx         # Detalle del local
+│   │
+│   ├── usuarios/
+│   │   ├── UserCard.jsx            # Card de usuario
+│   │   ├── UserList.jsx            # Lista de usuarios
+│   │   ├── UserForm.jsx            # Formulario de usuario
+│   │   └── UserProfile.jsx         # Perfil de usuario
+│   │
+│   └── invitaciones/
+│       ├── InvitationList.jsx      # Lista de invitaciones
+│       ├── InvitationForm.jsx      # Formulario nueva invitación
+│       └── InvitationCard.jsx      # Card de invitación
+│
+├── pages/
+│   ├── auth/
+│   │   ├── Login.jsx               # Página de login
+│   │   └── Register.jsx            # Página de registro
+│   │
+│   ├── Dashboard.jsx               # Dashboard principal
+│   ├── Items.jsx                   # Página de gestión de items
+│   ├── Locales.jsx                 # Página de gestión de locales
+│   ├── Usuarios.jsx                # Página de gestión de usuarios
+│   ├── Invitaciones.jsx            # Página de invitaciones
+│   ├── Profile.jsx                 # Perfil del usuario
+│   └── NotFound.jsx                # Página 404
+│
+├── services/
+│   ├── api.js                      # Configuración base de Axios
+│   ├── authService.js              # Servicios de autenticación
+│   ├── itemService.js              # Servicios de items
+│   ├── localService.js             # Servicios de locales
+│   ├── usuarioService.js           # Servicios de usuarios
+│   └── invitacionService.js        # Servicios de invitaciones
+│
+├── context/
+│   └── AuthContext.jsx             # Context de autenticación global
+│
+├── hooks/
+│   ├── useAuth.js                  # Hook personalizado para auth
+│   ├── useItems.js                 # Hook para items
+│   └── useLocales.js               # Hook para locales
+│
+├── utils/
+│   ├── axiosConfig.js              # Configuración de Axios con interceptors
+│   ├── validators.js               # Funciones de validación
+│   └── constants.js                # Constantes de la app
+│
+├── styles/
+│   └── theme.js                    # Configuración del tema MUI
+│
+├── App.jsx                         # Componente principal
+├── main.jsx                        # Entry point
+└── router.jsx                      # Configuración de rutas
+```
+
+---
+
+## 🎨 Páginas Detalladas
+
+### 1. Login Page (PRIORIDAD: CRÍTICA)
+
+**Ruta:** `/login`
+
+**Diseño:**
+- Layout centrado vertical y horizontalmente
+- Card con elevación (shadow)
+- Logo/Título "Local407" arriba
+- Formulario:
+  - Email (con validación email)
+  - Password (con toggle show/hide)
+  - Checkbox "Recordarme"
+  - Botón "Iniciar Sesión" (primary, full width)
+- Link "¿Olvidaste tu contraseña?" (secundario)
+- Link "¿No tienes cuenta? Regístrate" (al final)
+
+**Validaciones:**
+- Email: requerido, formato válido
+- Password: requerido, mínimo 6 caracteres
+
+**Comportamiento:**
+- Mostrar loader durante petición
+- En éxito: guardar token, redirigir a /dashboard
+- En error: mostrar mensaje de error (Snackbar)
+
+**Referencia visual:**
+```
+┌────────────────────────────────┐
+│                                │
+│       🏢 LOCAL407             │
+│                                │
+│  ┌──────────────────────────┐ │
+│  │  Email                   │ │
+│  │  ────────────────────    │ │
+│  │                          │ │
+│  │  Contraseña              │ │
+│  │  ────────────────────    │ │
+│  │                          │ │
+│  │  ☐ Recordarme            │ │
+│  │                          │ │
+│  │  [  INICIAR SESIÓN  ]    │ │
+│  │                          │ │
+│  │  ¿Olvidaste contraseña?  │ │
+│  └──────────────────────────┘ │
+│                                │
+│  ¿No tienes cuenta? Regístrate │
+│                                │
+└────────────────────────────────┘
+```
+
+---
+
+### 2. Register Page (PRIORIDAD: CRÍTICA)
+
+**Ruta:** `/register`
+
+**Diseño:**
+- Similar a Login
+- Formulario:
+  - Nombre completo
+  - Email
+  - Teléfono (opcional)
+  - Password
+  - Confirmar Password
+  - Botón "Registrarse"
+- Link "¿Ya tienes cuenta? Inicia sesión"
+
+**Validaciones:**
+- Nombre: requerido, 2-100 caracteres
+- Email: requerido, formato válido, único
+- Password: requerido, mínimo 6 caracteres, al menos 1 mayúscula, 1 minúscula, 1 número
+- Confirmar: debe coincidir con password
+- Teléfono: opcional, formato válido
+
+---
+
+### 3. Dashboard (PRIORIDAD: ALTA)
+
+**Ruta:** `/dashboard` (ruta por defecto después de login)
+
+**Layout:**
+- Sidebar a la izquierda (colapsable en móvil)
+- Topbar con:
+  - Logo "Local407"
+  - Breadcrumbs
+  - Icono de notificaciones
+  - Avatar + nombre usuario + dropdown (perfil, logout)
+
+**Contenido:**
+
+**Sección 1: Cards de Estadísticas (Grid 3 columnas)**
+```
+┌───────────────┐ ┌───────────────┐ ┌───────────────┐
+│  📦 Items     │ │  👥 Usuarios  │ │  🏢 Locales   │
+│               │ │               │ │               │
+│     25        │ │     12        │ │      3        │
+│  Disponibles  │ │   Activos     │ │  Registrados  │
+└───────────────┘ └───────────────┘ └───────────────┘
+```
+
+**Sección 2: Gráfico (opcional por ahora)**
+- Chart.js con actividad del mes
+
+**Sección 3: Últimas Actividades**
+- Tabla simple con:
+  - Últimos items añadidos
+  - Últimas invitaciones
+  - Etc.
+
+---
+
+### 4. Items Page (PRIORIDAD: ALTA)
+
+**Ruta:** `/items`
+
+**Toolbar superior:**
+- Título "Inventario de Backline"
+- Botón "+ Nuevo Item" (primary)
+- Búsqueda (TextField con icono lupa)
+- Filtros:
+  - Categoría (Select: Todos, Amplificador, Batería, Micrófono, etc.)
+  - Disponibilidad (Select: Todos, Disponible, Prestado)
+
+**Vista principal: Grid de Cards (3-4 columnas responsive)**
+
+Cada ItemCard debe mostrar:
+```
+┌────────────────────────────┐
+│  [   IMAGEN DEL ITEM   ]  │
+│                            │
+│  Amplificador Fender       │
+│  Categoría: Amplificador   │
+│  Estado: Excelente         │
+│                            │
+│  🟢 Disponible para préstamo│
+│                            │
+│  [Ver] [Editar] [Eliminar] │
+└────────────────────────────┘
+```
+
+**Paginación:**
+- Al final, usando componente Pagination de MUI
+- 12 items por página
+
+**Modal/Drawer para crear/editar:**
+- Se abre al click en "+ Nuevo Item" o "Editar"
+- Formulario con:
+  - Nombre (requerido)
+  - Descripción (textarea)
+  - Categoría (select)
+  - Condición (select: Excelente, Bueno, Regular, Necesita reparación)
+  - URL de imagen (opcional)
+  - Disponible para préstamo (checkbox)
+  - Propietario (select de usuarios)
+- Botones: Cancelar, Guardar
+
+---
+
+### 5. Locales Page (PRIORIDAD: MEDIA)
+
+**Ruta:** `/locales`
+
+**Layout:**
+- Similar a Items pero con cards de locales
+- Botón "+ Nuevo Local"
+
+**LocalCard:**
+```
+┌────────────────────────────┐
+│  Local 407 - Planta 4     │
+│                            │
+│  📍 Dirección completa     │
+│  👥 Capacidad: 4 bandas    │
+│                            │
+│  Miembros: 12 usuarios     │
+│                            │
+│  [Ver] [Editar] [Eliminar] │
+└────────────────────────────┘
+```
+
+---
+
+### 6. Usuarios Page (PRIORIDAD: MEDIA)
+
+**Ruta:** `/usuarios`
+
+**Layout:**
+- Tabla con usuarios (MUI Table)
+- Columnas:
+  - Avatar + Nombre
+  - Email
+  - Teléfono
+  - Role
+  - Local asignado
+  - Acciones (Editar, Eliminar)
+
+**Botón:** "+ Invitar Usuario"
+
+---
+
+### 7. Invitaciones Page (PRIORIDAD: BAJA)
+
+**Ruta:** `/invitaciones`
+
+**Layout:**
+- Lista de invitaciones pendientes
+- Cada invitación muestra:
+  - Email invitado
+  - Local
+  - Fecha de invitación
+  - Estado (Pendiente, Aceptada, Rechazada)
+  - Acciones (Reenviar, Cancelar)
+
+**Botón:** "+ Nueva Invitación"
+
+---
+
+### 8. Profile Page (PRIORIDAD: BAJA)
+
+**Ruta:** `/profile`
+
+**Layout:**
+- Card con información del usuario:
+  - Avatar grande
+  - Nombre
+  - Email
+  - Teléfono
+  - Local asignado
+- Botón "Editar Perfil"
+- Botón "Cambiar Contraseña"
+
+---
+
+## 🔐 Autenticación y Protección de Rutas
+
+### AuthContext (Context API)
+```javascript
+// Estructura del contexto
+{
+  user: {
+    id: number,
+    email: string,
+    nombre: string,
+    role: string
+  } | null,
+  token: string | null,
+  loading: boolean,
+  login: (email, password) => Promise,
+  register: (data) => Promise,
+  logout: () => void,
+  isAuthenticated: boolean
+}
+```
+
+### Almacenamiento
+- Token JWT en `localStorage` con key: `local407_token`
+- User data en `localStorage` con key: `local407_user`
+
+### ProtectedRoute Component
+```javascript
+// Si no está autenticado → redirect a /login
+// Si está autenticado → renderiza children
+```
+
+---
+
+## 📱 Responsive Design
+
+### Breakpoints (MUI default)
+- xs: 0px - 600px (móvil)
+- sm: 600px - 900px (tablet)
+- md: 900px - 1200px (desktop pequeño)
+- lg: 1200px - 1536px (desktop)
+- xl: 1536px+ (desktop grande)
+
+### Comportamiento:
+- **Móvil (xs, sm):**
+  - Sidebar oculto por defecto (hamburger menu)
+  - Cards en 1 columna
+  - Tabla scrollable horizontal
+  
+- **Tablet (md):**
+  - Sidebar colapsable
+  - Cards en 2 columnas
+  
+- **Desktop (lg, xl):**
+  - Sidebar visible siempre
+  - Cards en 3-4 columnas
+
+---
+
+## 🎨 Componentes MUI a Usar
+
+### Layout
+- `Box` - Contenedor flexible
+- `Container` - Contenedor con max-width
+- `Grid` - Sistema de grillas
+- `Stack` - Layout vertical/horizontal
+
+### Navegación
+- `AppBar` - Barra superior
+- `Toolbar` - Contenido del AppBar
+- `Drawer` - Sidebar
+- `Breadcrumbs` - Migas de pan
+
+### Inputs
+- `TextField` - Input de texto
+- `Select` - Dropdown
+- `Checkbox` - Checkbox
+- `Switch` - Toggle
+- `Button` - Botones
+- `IconButton` - Botones de iconos
+
+### Display
+- `Card`, `CardContent`, `CardActions` - Cards
+- `Table`, `TableBody`, `TableCell`, `TableRow`, `TableHead` - Tablas
+- `Chip` - Etiquetas pequeñas
+- `Avatar` - Avatar circular
+- `Divider` - Línea separadora
+- `Typography` - Textos con estilos
+
+### Feedback
+- `Dialog` - Modales
+- `Snackbar` - Notificaciones toast
+- `Alert` - Alertas
+- `CircularProgress` - Spinner de carga
+- `LinearProgress` - Barra de progreso
+- `Skeleton` - Placeholder de carga
+
+### Navigation
+- `Tabs` - Pestañas
+- `Pagination` - Paginación
+- `Menu`, `MenuItem` - Menús desplegables
+
+---
+
+## 🔄 Manejo de Estados y Peticiones
+
+### Pattern para llamadas API
+```javascript
+const [data, setData] = useState(null);
+const [loading, setLoading] = useState(false);
+const [error, setError] = useState(null);
+
+useEffect(() => {
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const response = await itemService.getAll();
+      setData(response.data);
+      setError(null);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Error al cargar datos');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  fetchData();
+}, []);
+```
+
+### Mostrar estados:
+- **Loading:** Mostrar `<CircularProgress />` o `<Skeleton />`
+- **Error:** Mostrar `<Alert severity="error">`
+- **Success:** Mostrar datos
+
+---
+
+## 🚨 Manejo de Errores
+
+### Tipos de errores a manejar:
+- **400 Bad Request:** Validación fallida → Mostrar errores en formulario
+- **401 Unauthorized:** Token inválido → Logout y redirect a login
+- **403 Forbidden:** Sin permisos → Mostrar mensaje
+- **404 Not Found:** Recurso no existe → Página 404
+- **409 Conflict:** Duplicado (ej. email existe) → Mensaje específico
+- **500 Server Error:** Error del servidor → Mensaje genérico
+
+### Interceptor de Axios (axiosConfig.js):
+```javascript
+// Si 401 → logout automático
+// Si otro error → mostrar Snackbar
+```
+
+---
+
+## ✅ Validación de Formularios
+
+### Schema con Yup (ejemplo Login):
+```javascript
+const loginSchema = yup.object({
+  email: yup
+    .string()
+    .email('Email inválido')
+    .required('El email es obligatorio'),
+  password: yup
+    .string()
+    .min(6, 'Mínimo 6 caracteres')
+    .required('La contraseña es obligatoria')
+});
+```
+
+### Integración con React Hook Form:
+```javascript
+const { register, handleSubmit, formState: { errors } } = useForm({
+  resolver: yupResolver(loginSchema)
+});
+```
+
+---
+
+## 🎯 Prioridades de Desarrollo
+
+### FASE 1: Autenticación (1-2 días)
+1. ✅ Setup proyecto React + MUI
+2. ✅ AuthContext
+3. ✅ Página Login
+4. ✅ Página Register
+5. ✅ ProtectedRoute
+6. ✅ Axios config con interceptors
+
+### FASE 2: Layout Base (1 día)
+1. ✅ Sidebar
+2. ✅ Navbar
+3. ✅ Footer
+4. ✅ Router con rutas
+
+### FASE 3: Items (2-3 días)
+1. ✅ Página Items
+2. ✅ ItemCard component
+3. ✅ ItemList con paginación
+4. ✅ ItemForm (crear/editar)
+5. ✅ Filtros y búsqueda
+
+### FASE 4: Dashboard (1 día)
+1. ✅ Cards de estadísticas
+2. ✅ Lista de últimas actividades
+
+### FASE 5: Locales y Usuarios (2 días)
+1. ✅ Página Locales
+2. ✅ Página Usuarios
+3. ✅ CRUD completo
+
+### FASE 6: Invitaciones (1 día)
+1. ✅ Página Invitaciones
+2. ✅ Formulario y listado
+
+### FASE 7: Profile y Polish (1 día)
+1. ✅ Página Profile
+2. ✅ Ajustes finales
+3. ✅ Responsive testing
+
+---
+
+## 📦 Instalación Inicial
+```bash
+# Crear proyecto (si no existe)
+npm create vite@latest . -- --template react
+
+# Instalar dependencias principales
+npm install @mui/material @emotion/react @emotion/styled
+npm install @mui/icons-material
+npm install react-router-dom
+npm install axios
+npm install react-hook-form
+npm install yup @hookform/resolvers
+
+# Instalar utilidades
+npm install date-fns
+
+# Desarrollo
+npm install -D eslint prettier
+```
+
+---
+
+## 🎨 Estructura del Tema MUI (theme.js)
+```javascript
+import { createTheme } from '@mui/material/styles';
+
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#1976d2',
+    },
+    secondary: {
+      main: '#dc004e',
+    },
+    success: {
+      main: '#4caf50',
+    },
+    error: {
+      main: '#f44336',
+    },
+    background: {
+      default: '#f5f5f5',
+      paper: '#ffffff',
+    },
+  },
+  typography: {
+    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    h4: {
+      fontWeight: 600,
+    },
+    h5: {
+      fontWeight: 500,
+    },
+  },
+  shape: {
+    borderRadius: 8,
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none', // No UPPERCASE
+          fontWeight: 500,
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        },
+      },
+    },
+  },
+});
+
+export default theme;
+```
+
+---
+
+## 🔌 Ejemplo de Service (itemService.js)
+```javascript
+import api from './api';
+
+const itemService = {
+  getAll: (page = 0, size = 12, categoria = null, disponible = null) => {
+    const params = { page, size };
+    if (categoria) params.categoria = categoria;
+    if (disponible !== null) params.disponible = disponible;
+    
+    return api.get('/items', { params });
+  },
+  
+  getById: (id) => {
+    return api.get(`/items/${id}`);
+  },
+  
+  create: (data) => {
+    return api.post('/items', data);
+  },
+  
+  update: (id, data) => {
+    return api.put(`/items/${id}`, data);
+  },
+  
+  delete: (id) => {
+    return api.delete(`/items/${id}`);
+  },
+};
+
+export default itemService;
+```
+
+---
+
+## 📝 Notas Importantes
+
+### 1. **CORS**
+Asegúrate de que el backend tenga CORS configurado para:
+```
+http://localhost:5173  (Vite default)
+http://localhost:3000  (Create React App)
+```
+
+### 2. **Tokens JWT**
+- Guardar en localStorage
+- Incluir en header Authorization de cada petición
+- Logout: borrar token y redirect a login
+
+### 3. **Feedback al Usuario**
+- Usar Snackbar para notificaciones
+- Loader durante operaciones
+- Confirmación antes de eliminar
+- Mensajes de éxito claros
+
+### 4. **Optimización**
+- Lazy loading de páginas con React.lazy()
+- Debounce en búsquedas
+- Cache de imágenes
+- Skeleton loaders
+
+---
+
+## 🎬 Prompt para Claude en IntelliJ
+```
+Lee el archivo FRONTEND_REQUIREMENTS.md que he creado en frontend/
+
+Necesito que construyas el frontend EXACTAMENTE según esas especificaciones.
+
+Empezaremos por FASE 1 (Autenticación):
+1. Setup del proyecto con Vite + React
+2. Instalación de todas las dependencias listadas
+3. Configuración del tema de MUI (theme.js)
+4. Creación de AuthContext con Context API
+5. Configuración de Axios (api.js + authService.js)
+6. Componente Login con validación completa
+7. Componente Register con validación completa
+8. ProtectedRoute component
+9. Router básico
+
+Usa Material-UI para TODOS los componentes.
+Sigue el estilo visual del template Material Dashboard 2 React.
+Código limpio, comentado y con buenas prácticas.
+
+¿Empezamos?
+```
+
+---
+
+## ✅ Checklist de Completitud
+
+Al finalizar cada componente, verificar:
+
+- [ ] Tiene validación de errores
+- [ ] Muestra estado de loading
+- [ ] Maneja errores de API
+- [ ] Es responsive
+- [ ] Tiene estilos consistentes (MUI)
+- [ ] Sigue la estructura de carpetas
+- [ ] Código comentado
+- [ ] Sin console.log en producción
