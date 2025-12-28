@@ -2,32 +2,32 @@ import api from './api';
 
 const invitacionService = {
   getAll: async () => {
-    const response = await api.get('/api/invitaciones');
+    const response = await api.get('/invitaciones');
     return response.data;
   },
 
   getById: async (id) => {
-    const response = await api.get(`/api/invitaciones/${id}`);
+    const response = await api.get(`/invitaciones/${id}`);
     return response.data;
   },
 
   create: async (invitacion) => {
-    const response = await api.post('/api/invitaciones', invitacion);
+    const response = await api.post('/invitaciones', invitacion);
     return response.data;
   },
 
   aceptar: async (id) => {
-    const response = await api.post(`/api/invitaciones/${id}/aceptar`);
+    const response = await api.post(`/invitaciones/${id}/aceptar`);
     return response.data;
   },
 
   rechazar: async (id) => {
-    const response = await api.post(`/api/invitaciones/${id}/rechazar`);
+    const response = await api.post(`/invitaciones/${id}/rechazar`);
     return response.data;
   },
 
   delete: async (id) => {
-    await api.delete(`/api/invitaciones/${id}`);
+    await api.delete(`/invitaciones/${id}`);
   },
 };
 

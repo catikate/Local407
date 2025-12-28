@@ -24,7 +24,7 @@ const Footer = () => {
           }}
         >
           <Typography variant="body2" color="text.secondary">
-            © 2025 LOCAL407 - Sistema de Gestión de Locales
+            © 2025 NICHO - Plataforma de gestion para musiques y artistas
           </Typography>
           <Box sx={{ display: 'flex', gap: 2 }}>
             <Link href="#" variant="body2" color="text.secondary" underline="hover">

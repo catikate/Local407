@@ -1,53 +1,57 @@
 import api from './api';
 
 const itemService = {
-  // Obtener todos los items con filtros y paginación
-  getAll: (page = 0, size = 12, filters = {}) => {
-    const params = { page, size };
-
-    if (filters.categoria) {
-      params.categoria = filters.categoria;
-    }
-
-    if (filters.disponible !== null && filters.disponible !== undefined) {
-      params.disponible = filters.disponible;
-    }
-
-    if (filters.search) {
-      params.search = filters.search;
-    }
-
-    return api.get('/items', { params });
+  // Obtener todos los items
+  getAll: async () => {
+    const response = await api.get('/items');
+    return response.data;
   },
 
   // Obtener item por ID
-  getById: (id) => {
-    return api.get(`/items/${id}`);
+  getById: async (id) => {
+    const response = await api.get(`/items/${id}`);
+    return response.data;
   },
 
   // Crear nuevo item
-  create: (itemData) => {
-    return api.post('/items', itemData);
+  create: async (itemData) => {
+    const response = await api.post('/items', itemData);
+    return response.data;
   },
 
   // Actualizar item existente
-  update: (id, itemData) => {
-    return api.put(`/items/${id}`, itemData);
+  update: async (id, itemData) => {
+    const response = await api.put(`/items/${id}`, itemData);
+    return response.data;
   },
 
   // Eliminar item
-  delete: (id) => {
-    return api.delete(`/items/${id}`);
+  delete: async (id) => {
+    await api.delete(`/items/${id}`);
   },
 
-  // Obtener items por usuario
-  getByUsuario: (usuarioId) => {
-    return api.get(`/items/usuario/${usuarioId}`);
+  // Obtener items por usuario (propietario)
+  getByUsuario: async (usuarioId) => {
+    const response = await api.get(`/items/usuario/${usuarioId}`);
+    return response.data;
   },
 
-  // Obtener items prestados a un usuario
-  getByPrestadoA: (usuarioId) => {
-    return api.get(`/items/prestado/${usuarioId}`);
+  // Obtener items por local
+  getByLocal: async (localId) => {
+    const response = await api.get(`/items/local/${localId}`);
+    return response.data;
+  },
+
+  // Obtener items prestados a un usuario/banda
+  getByPrestadoA: async (prestadoAId) => {
+    const response = await api.get(`/items/prestado/${prestadoAId}`);
+    return response.data;
+  },
+
+  // Obtener items de los locales del usuario
+  getByUsuarioLocales: async (usuarioId) => {
+    const response = await api.get(`/items/usuario/${usuarioId}/locales`);
+    return response.data;
   },
 };
 

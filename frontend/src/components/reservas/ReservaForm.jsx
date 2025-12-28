@@ -22,6 +22,7 @@ import {
 } from '@mui/material';
 import { useAuth } from '../../hooks/useAuth';
 import localService from '../../services/localService';
+import bandaService from '../../services/bandaService';
 
 // Schema de validación
 const reservaSchema = yup.object({
@@ -52,6 +53,8 @@ const ReservaForm = ({ open, onClose, onSubmit, reserva, loading }) => {
   const isEditing = !!reserva;
   const [locales, setLocales] = useState([]);
   const [loadingLocales, setLoadingLocales] = useState(false);
+  const [bandas, setBandas] = useState([]);
+  const [loadingBandas, setLoadingBandas] = useState(false);
 
   const {
     control,
@@ -63,6 +66,7 @@ const ReservaForm = ({ open, onClose, onSubmit, reserva, loading }) => {
     resolver: yupResolver(reservaSchema),
     defaultValues: {
       localId: '',
+      bandaId: '',
       fechaInicio: '',
       fechaFin: '',
       esReservaDiaCompleto: false,
@@ -72,23 +76,42 @@ const ReservaForm = ({ open, onClose, onSubmit, reserva, loading }) => {
 
   const esReservaDiaCompleto = watch('esReservaDiaCompleto');
 
-  // Cargar locales cuando se abre el formulario
+  // Cargar locales y bandas cuando se abre el formulario
   useEffect(() => {
     if (open) {
       loadLocales();
+      loadBandas();
     }
   }, [open]);
 
   const loadLocales = async () => {
     try {
       setLoadingLocales(true);
-      const data = await localService.getAll();
-      setLocales(data);
+      const response = await localService.getAll();
+      setLocales(response.data || []);
     } catch (error) {
       console.error('Error loading locales:', error);
       setLocales([]);
     } finally {
       setLoadingLocales(false);
+    }
+  };
+
+  const loadBandas = async () => {
+    try {
+      setLoadingBandas(true);
+      const response = await bandaService.getAll();
+      // Filtrar bandas del usuario
+      const todasBandas = response.data;
+      const bandasDelUsuario = todasBandas.filter(banda =>
+        banda.miembros && banda.miembros.some(m => m.id === user.id)
+      );
+      setBandas(bandasDelUsuario);
+    } catch (error) {
+      console.error('Error loading bandas:', error);
+      setBandas([]);
+    } finally {
+      setLoadingBandas(false);
     }
   };
 
@@ -109,6 +132,7 @@ const ReservaForm = ({ open, onClose, onSubmit, reserva, loading }) => {
 
         reset({
           localId: reserva.local?.id || '',
+          bandaId: reserva.banda?.id || '',
           fechaInicio: formatDateTimeLocal(reserva.fechaInicio),
           fechaFin: formatDateTimeLocal(reserva.fechaFin),
           esReservaDiaCompleto: reserva.esReservaDiaCompleto || false,
@@ -117,6 +141,7 @@ const ReservaForm = ({ open, onClose, onSubmit, reserva, loading }) => {
       } else {
         reset({
           localId: '',
+          bandaId: '',
           fechaInicio: '',
           fechaFin: '',
           esReservaDiaCompleto: false,
@@ -136,6 +161,11 @@ const ReservaForm = ({ open, onClose, onSubmit, reserva, loading }) => {
       usuario: { id: user.id },
       local: { id: data.localId },
     };
+
+    // Incluir banda si está seleccionada
+    if (data.bandaId) {
+      reservaData.banda = { id: data.bandaId };
+    }
 
     onSubmit(reservaData);
   };
@@ -158,7 +188,7 @@ const ReservaForm = ({ open, onClose, onSubmit, reserva, loading }) => {
 
             <Grid container spacing={2}>
               {/* Local */}
-              <Grid item xs={12}>
+              <Grid item xs={12} sm={6}>
                 <Controller
                   name="localId"
                   control={control}
@@ -190,6 +220,47 @@ const ReservaForm = ({ open, onClose, onSubmit, reserva, loading }) => {
                       {errors.localId && (
                         <Box component="span" sx={{ color: 'error.main', fontSize: '0.75rem', mt: 0.5, ml: 2 }}>
                           {errors.localId.message}
+                        </Box>
+                      )}
+                    </FormControl>
+                  )}
+                />
+              </Grid>
+
+              {/* Banda (opcional) */}
+              <Grid item xs={12} sm={6}>
+                <Controller
+                  name="bandaId"
+                  control={control}
+                  render={({ field }) => (
+                    <FormControl fullWidth error={!!errors.bandaId}>
+                      <InputLabel>Banda (opcional)</InputLabel>
+                      <Select
+                        {...field}
+                        label="Banda (opcional)"
+                        disabled={loadingBandas || isEditing}
+                      >
+                        <MenuItem value="">Reserva personal</MenuItem>
+                        {loadingBandas ? (
+                          <MenuItem disabled>
+                            <CircularProgress size={20} sx={{ mr: 1 }} />
+                            Cargando bandas...
+                          </MenuItem>
+                        ) : bandas.length === 0 ? (
+                          <MenuItem disabled>
+                            No tienes bandas
+                          </MenuItem>
+                        ) : (
+                          bandas.map((banda) => (
+                            <MenuItem key={banda.id} value={banda.id}>
+                              {banda.nombre}
+                            </MenuItem>
+                          ))
+                        )}
+                      </Select>
+                      {errors.bandaId && (
+                        <Box component="span" sx={{ color: 'error.main', fontSize: '0.75rem', mt: 0.5, ml: 2 }}>
+                          {errors.bandaId.message}
                         </Box>
                       )}
                     </FormControl>

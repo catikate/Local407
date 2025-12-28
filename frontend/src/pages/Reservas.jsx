@@ -55,7 +55,8 @@ function Reservas() {
     try {
       setLoading(true);
       setError('');
-      const data = await reservaService.getByUsuario(user.id);
+      // Cargar reservas compartidas (propias + de las bandas del usuario)
+      const data = await reservaService.getCompartidas(user.id);
       setReservas(data);
     } catch (err) {
       setError(err.response?.data?.error || 'Error al cargar reservas');

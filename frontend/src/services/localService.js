@@ -1,33 +1,36 @@
 import api from './api';
 
 const localService = {
-  getAll: async () => {
-    const response = await api.get('/api/locales');
-    return response.data;
+  getAll: () => {
+    return api.get('/locales');
   },
 
-  getById: async (id) => {
-    const response = await api.get(`/api/locales/${id}`);
-    return response.data;
+  getById: (id) => {
+    return api.get(`/locales/${id}`);
   },
 
-  create: async (local) => {
-    const response = await api.post('/api/locales', local);
-    return response.data;
+  create: (local) => {
+    return api.post('/locales', local);
   },
 
-  update: async (id, local) => {
-    const response = await api.put(`/api/locales/${id}`, local);
-    return response.data;
+  update: (id, local) => {
+    return api.put(`/locales/${id}`, local);
   },
 
-  delete: async (id) => {
-    await api.delete(`/api/locales/${id}`);
+  delete: (id) => {
+    return api.delete(`/locales/${id}`);
   },
 
-  getItems: async (localId) => {
-    const response = await api.get(`/api/locales/${localId}/items`);
-    return response.data;
+  getItems: (localId) => {
+    return api.get(`/locales/${localId}/items`);
+  },
+
+  addUsuario: (localId, usuarioId) => {
+    return api.post(`/locales/${localId}/usuarios/${usuarioId}`);
+  },
+
+  removeUsuario: (localId, usuarioId) => {
+    return api.delete(`/locales/${localId}/usuarios/${usuarioId}`);
   },
 };
 

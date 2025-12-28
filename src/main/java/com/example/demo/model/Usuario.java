@@ -7,7 +7,7 @@ import java.util.Set;
 
 @Entity
 @Table(name = "usuario")
-@JsonIgnoreProperties({"localesAdministrados", "usuarioLocales", "items", "invitacionesEnviadas", "invitacionesRecibidas"})
+@JsonIgnoreProperties({"localesAdministrados", "usuarioLocales", "items", "invitacionesEnviadas", "invitacionesRecibidas", "bandas"})
 public class Usuario {
 
     @Id
@@ -40,6 +40,9 @@ public class Usuario {
 
     @OneToMany(mappedBy = "a", cascade = CascadeType.ALL)
     private Set<Invitacion> invitacionesRecibidas = new HashSet<>();
+
+    @ManyToMany(mappedBy = "miembros")
+    private Set<Banda> bandas = new HashSet<>();
 
     public Usuario() {}
 
@@ -130,5 +133,13 @@ public class Usuario {
 
     public void setInvitacionesRecibidas(Set<Invitacion> invitacionesRecibidas) {
         this.invitacionesRecibidas = invitacionesRecibidas;
+    }
+
+    public Set<Banda> getBandas() {
+        return bandas;
+    }
+
+    public void setBandas(Set<Banda> bandas) {
+        this.bandas = bandas;
     }
 }

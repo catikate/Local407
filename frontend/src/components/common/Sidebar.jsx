@@ -23,6 +23,10 @@ import {
   Person as PersonIcon,
   Menu as MenuIcon,
   ChevronLeft as ChevronLeftIcon,
+  Groups as GroupsIcon,
+  Group as GroupIcon,
+  SwapHoriz as SwapHorizIcon,
+  CalendarMonth as CalendarMonthIcon,
 } from '@mui/icons-material';
 
 const DRAWER_WIDTH = 260;
@@ -30,9 +34,10 @@ const DRAWER_WIDTH = 260;
 const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
   { text: 'Inventario', icon: <InventoryIcon />, path: '/items' },
+  { text: 'Mis Bandas', icon: <GroupIcon />, path: '/mis-bandas' },
+  { text: 'Préstamos', icon: <SwapHorizIcon />, path: '/prestamos' },
+  { text: 'Reservas', icon: <CalendarMonthIcon />, path: '/reservas' },
   { text: 'Locales', icon: <BusinessIcon />, path: '/locales' },
-  { text: 'Usuarios', icon: <PeopleIcon />, path: '/usuarios' },
-  { text: 'Invitaciones', icon: <MailIcon />, path: '/invitaciones' },
   { text: 'Mi Perfil', icon: <PersonIcon />, path: '/profile' },
 ];
 
@@ -62,10 +67,10 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
       >
         <Box>
           <Typography variant="h5" fontWeight={700} color="primary">
-            🏢 LOCAL407
+            NICHO
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            Gestión de Locales
+            Plataforma de gestión para músiques y artistas
           </Typography>
         </Box>
         {isMobile && (
@@ -129,7 +134,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
           Versión 1.0.0
         </Typography>
         <Typography variant="caption" color="text.secondary" display="block">
-          © 2025 LOCAL407
+          © 2025 NICHO
         </Typography>
       </Box>
     </Box>

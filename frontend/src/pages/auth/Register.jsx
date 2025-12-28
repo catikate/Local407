@@ -101,10 +101,10 @@ const Register = () => {
       <Container maxWidth="sm">
         <Box textAlign="center" mb={4}>
           <Typography variant="h3" component="h1" gutterBottom fontWeight={600}>
-            🏢 LOCAL407
+            NICHO
           </Typography>
           <Typography variant="h6" color="text.secondary">
-            Sistema de Gestión de Locales
+            Plataforma de gestión para músiques y artistas
           </Typography>
         </Box>
 

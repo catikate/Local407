@@ -17,6 +17,8 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 
     List<Reserva> findByLocalId(Long localId);
 
+    List<Reserva> findByBandaId(Long bandaId);
+
     List<Reserva> findByEstado(ReservaEstado estado);
 
     @Query("SELECT r FROM Reserva r WHERE r.local.id = :localId AND r.estado IN ('CONFIRMADA', 'APROBADA', 'PENDIENTE_APROBACIONES') " +

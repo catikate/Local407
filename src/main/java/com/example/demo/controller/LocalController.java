@@ -57,4 +57,22 @@ public class LocalController {
         }
         return ResponseEntity.notFound().build();
     }
+
+    @PostMapping("/{localId}/usuarios/{usuarioId}")
+    public ResponseEntity<Local> addUsuario(@PathVariable Long localId, @PathVariable Long usuarioId) {
+        Local local = localService.addUsuario(localId, usuarioId);
+        if (local != null) {
+            return ResponseEntity.ok(local);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    @DeleteMapping("/{localId}/usuarios/{usuarioId}")
+    public ResponseEntity<Local> removeUsuario(@PathVariable Long localId, @PathVariable Long usuarioId) {
+        Local local = localService.removeUsuario(localId, usuarioId);
+        if (local != null) {
+            return ResponseEntity.ok(local);
+        }
+        return ResponseEntity.notFound().build();
+    }
 }

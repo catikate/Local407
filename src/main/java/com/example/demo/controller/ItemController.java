@@ -43,9 +43,21 @@ public class ItemController {
         return ResponseEntity.ok(itemService.findByPrestadoAId(prestadoAId));
     }
 
+    @GetMapping("/usuario/{usuarioId}/locales")
+    public ResponseEntity<List<Item>> getItemsByUsuarioLocales(@PathVariable Long usuarioId) {
+        return ResponseEntity.ok(itemService.findByUsuarioLocales(usuarioId));
+    }
+
     @PostMapping
     public ResponseEntity<Item> createItem(@RequestBody Item item) {
+        System.out.println("=== CREATE ITEM REQUEST ===");
+        System.out.println("Item: " + item);
+        System.out.println("Propietario Usuario: " + item.getPropietarioUsuario());
+        System.out.println("Propietario Banda: " + item.getPropietarioBanda());
+        System.out.println("Local Original: " + item.getLocalOriginal());
+        System.out.println("Local Actual: " + item.getLocalActual());
         Item savedItem = itemService.save(item);
+        System.out.println("Item saved successfully with ID: " + savedItem.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(savedItem);
     }
 
