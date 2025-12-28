@@ -26,10 +26,24 @@ import bandaService from '../../services/bandaService';
 
 // Schema de validación
 const reservaSchema = yup.object({
+  tipoEvento: yup
+    .string()
+    .required('Debes seleccionar el tipo de evento')
+    .oneOf(['ENSAYO', 'SHOW', 'SHOW_PERSONAL']),
   localId: yup
     .number()
-    .required('Debes seleccionar un local')
-    .typeError('Debes seleccionar un local'),
+    .when('tipoEvento', {
+      is: 'ENSAYO',
+      then: (schema) => schema.required('El local es obligatorio para ensayos').typeError('Debes seleccionar un local'),
+      otherwise: (schema) => schema.nullable().transform((value) => value === '' ? null : value),
+    }),
+  bandaId: yup
+    .number()
+    .when('tipoEvento', {
+      is: 'SHOW',
+      then: (schema) => schema.required('La banda es obligatoria para shows').typeError('Debes seleccionar una banda'),
+      otherwise: (schema) => schema.nullable().transform((value) => value === '' ? null : value),
+    }),
   fechaInicio: yup
     .string()
     .required('La fecha de inicio es obligatoria'),
@@ -65,6 +79,7 @@ const ReservaForm = ({ open, onClose, onSubmit, reserva, loading }) => {
   } = useForm({
     resolver: yupResolver(reservaSchema),
     defaultValues: {
+      tipoEvento: 'ENSAYO',
       localId: '',
       bandaId: '',
       fechaInicio: '',
@@ -74,6 +89,7 @@ const ReservaForm = ({ open, onClose, onSubmit, reserva, loading }) => {
     },
   });
 
+  const tipoEvento = watch('tipoEvento');
   const esReservaDiaCompleto = watch('esReservaDiaCompleto');
 
   // Cargar locales y bandas cuando se abre el formulario
@@ -131,6 +147,7 @@ const ReservaForm = ({ open, onClose, onSubmit, reserva, loading }) => {
         };
 
         reset({
+          tipoEvento: reserva.tipoEvento || 'ENSAYO',
           localId: reserva.local?.id || '',
           bandaId: reserva.banda?.id || '',
           fechaInicio: formatDateTimeLocal(reserva.fechaInicio),
@@ -140,6 +157,7 @@ const ReservaForm = ({ open, onClose, onSubmit, reserva, loading }) => {
         });
       } else {
         reset({
+          tipoEvento: 'ENSAYO',
           localId: '',
           bandaId: '',
           fechaInicio: '',
@@ -154,15 +172,20 @@ const ReservaForm = ({ open, onClose, onSubmit, reserva, loading }) => {
   const handleFormSubmit = (data) => {
     // Preparar datos para el backend
     const reservaData = {
+      tipoEvento: data.tipoEvento,
       fechaInicio: new Date(data.fechaInicio).toISOString(),
       fechaFin: new Date(data.fechaFin).toISOString(),
-      esReservaDiaCompleto: data.esReservaDiaCompleto,
+      esReservaDiaCompleto: data.esReservaDiaCompleto && data.tipoEvento === 'ENSAYO',
       notas: data.notas || null,
       usuario: { id: user.id },
-      local: { id: data.localId },
     };
 
-    // Incluir banda si está seleccionada
+    // Incluir local si está seleccionado (obligatorio para ENSAYO)
+    if (data.localId) {
+      reservaData.local = { id: data.localId };
+    }
+
+    // Incluir banda si está seleccionada (obligatorio para SHOW)
     if (data.bandaId) {
       reservaData.banda = { id: data.bandaId };
     }
@@ -179,25 +202,62 @@ const ReservaForm = ({ open, onClose, onSubmit, reserva, loading }) => {
       <form onSubmit={handleSubmit(handleFormSubmit)}>
         <DialogContent>
           <Box sx={{ pt: 1 }}>
-            {/* Información sobre reservas de día completo */}
-            {esReservaDiaCompleto && (
+            {/* Información sobre tipo de evento */}
+            {tipoEvento === 'ENSAYO' && esReservaDiaCompleto && (
               <Alert severity="info" sx={{ mb: 3 }}>
                 Las reservas de día completo requieren la aprobación de todos los usuarios del local.
               </Alert>
             )}
+            {tipoEvento === 'SHOW' && (
+              <Alert severity="success" sx={{ mb: 3 }}>
+                Los shows se confirman automáticamente.
+              </Alert>
+            )}
+            {tipoEvento === 'SHOW_PERSONAL' && (
+              <Alert severity="success" sx={{ mb: 3 }}>
+                Los shows personales se confirman automáticamente.
+              </Alert>
+            )}
 
             <Grid container spacing={2}>
+              {/* Tipo de Evento */}
+              <Grid item xs={12}>
+                <Controller
+                  name="tipoEvento"
+                  control={control}
+                  render={({ field }) => (
+                    <FormControl fullWidth required error={!!errors.tipoEvento}>
+                      <InputLabel>Tipo de Evento</InputLabel>
+                      <Select
+                        {...field}
+                        label="Tipo de Evento"
+                        disabled={isEditing}
+                      >
+                        <MenuItem value="ENSAYO">Ensayo</MenuItem>
+                        <MenuItem value="SHOW">Show de Banda</MenuItem>
+                        <MenuItem value="SHOW_PERSONAL">Show Personal</MenuItem>
+                      </Select>
+                      {errors.tipoEvento && (
+                        <Box component="span" sx={{ color: 'error.main', fontSize: '0.75rem', mt: 0.5, ml: 2 }}>
+                          {errors.tipoEvento.message}
+                        </Box>
+                      )}
+                    </FormControl>
+                  )}
+                />
+              </Grid>
+
               {/* Local */}
               <Grid item xs={12} sm={6}>
                 <Controller
                   name="localId"
                   control={control}
                   render={({ field }) => (
-                    <FormControl fullWidth required error={!!errors.localId}>
-                      <InputLabel>Local</InputLabel>
+                    <FormControl fullWidth required={tipoEvento === 'ENSAYO'} error={!!errors.localId}>
+                      <InputLabel>{tipoEvento === 'ENSAYO' ? 'Local' : 'Local (opcional)'}</InputLabel>
                       <Select
                         {...field}
-                        label="Local"
+                        label={tipoEvento === 'ENSAYO' ? 'Local' : 'Local (opcional)'}
                         disabled={loadingLocales || isEditing}
                       >
                         {loadingLocales ? (
@@ -227,20 +287,22 @@ const ReservaForm = ({ open, onClose, onSubmit, reserva, loading }) => {
                 />
               </Grid>
 
-              {/* Banda (opcional) */}
+              {/* Banda */}
               <Grid item xs={12} sm={6}>
                 <Controller
                   name="bandaId"
                   control={control}
                   render={({ field }) => (
-                    <FormControl fullWidth error={!!errors.bandaId}>
-                      <InputLabel>Banda (opcional)</InputLabel>
+                    <FormControl fullWidth required={tipoEvento === 'SHOW'} error={!!errors.bandaId}>
+                      <InputLabel>
+                        {tipoEvento === 'SHOW' ? 'Banda' : 'Banda (opcional)'}
+                      </InputLabel>
                       <Select
                         {...field}
-                        label="Banda (opcional)"
+                        label={tipoEvento === 'SHOW' ? 'Banda' : 'Banda (opcional)'}
                         disabled={loadingBandas || isEditing}
                       >
-                        <MenuItem value="">Reserva personal</MenuItem>
+                        {tipoEvento !== 'SHOW' && <MenuItem value="">Sin banda</MenuItem>}
                         {loadingBandas ? (
                           <MenuItem disabled>
                             <CircularProgress size={20} sx={{ mr: 1 }} />
@@ -312,25 +374,27 @@ const ReservaForm = ({ open, onClose, onSubmit, reserva, loading }) => {
                 />
               </Grid>
 
-              {/* Reserva de día completo */}
-              <Grid item xs={12}>
-                <Controller
-                  name="esReservaDiaCompleto"
-                  control={control}
-                  render={({ field }) => (
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          {...field}
-                          checked={field.value}
-                          disabled={isEditing}
-                        />
-                      }
-                      label="Reserva de día completo (requiere aprobación de todos los usuarios del local)"
-                    />
-                  )}
-                />
-              </Grid>
+              {/* Reserva de día completo - solo para ENSAYO */}
+              {tipoEvento === 'ENSAYO' && (
+                <Grid item xs={12}>
+                  <Controller
+                    name="esReservaDiaCompleto"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            {...field}
+                            checked={field.value}
+                            disabled={isEditing}
+                          />
+                        }
+                        label="Reserva de día completo (requiere aprobación de todos los usuarios del local)"
+                      />
+                    )}
+                  />
+                </Grid>
+              )}
 
               {/* Notas */}
               <Grid item xs={12}>

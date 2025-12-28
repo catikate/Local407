@@ -1,17 +1,21 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.CalendarEventDTO;
 import com.example.demo.model.Reserva;
 import com.example.demo.model.ReservaAprobacion;
 import com.example.demo.model.ReservaEstado;
+import com.example.demo.model.TipoEvento;
 import com.example.demo.service.ReservaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/reservas")
@@ -55,6 +59,10 @@ public class ReservaController {
     @PostMapping
     public ResponseEntity<?> createReserva(@RequestBody Reserva reserva) {
         try {
+            // Default para backward compatibility
+            if (reserva.getTipoEvento() == null) {
+                reserva.setTipoEvento(TipoEvento.ENSAYO);
+            }
             Reserva nuevaReserva = reservaService.save(reserva);
             return ResponseEntity.status(HttpStatus.CREATED).body(nuevaReserva);
         } catch (IllegalArgumentException | IllegalStateException e) {
@@ -83,6 +91,26 @@ public class ReservaController {
         }
         reservaService.deleteById(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/usuario/{usuarioId}/calendario")
+    public ResponseEntity<List<CalendarEventDTO>> getCalendarEvents(
+            @PathVariable Long usuarioId,
+            @RequestParam int year,
+            @RequestParam int month) {
+
+        LocalDateTime startOfMonth = LocalDateTime.of(year, month, 1, 0, 0);
+        LocalDateTime endOfMonth = startOfMonth.plusMonths(1);
+
+        List<Reserva> reservas = reservaService.findByUsuarioAndMonth(
+            usuarioId, startOfMonth, endOfMonth
+        );
+
+        List<CalendarEventDTO> events = reservas.stream()
+            .map(CalendarEventDTO::new)
+            .collect(Collectors.toList());
+
+        return ResponseEntity.ok(events);
     }
 
     @GetMapping("/{id}/aprobaciones")
