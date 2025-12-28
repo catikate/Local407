@@ -1,11 +1,13 @@
 package com.example.demo.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import java.util.Objects;
 
 @Entity
 @Table(name = "usuario_local")
+@JsonIgnoreProperties({"local"})
 public class UsuarioLocal {
 
     @EmbeddedId

@@ -14,12 +14,14 @@ import {
   DialogActions,
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
+import { useAuth } from '../hooks/useAuth';
 import itemService from '../services/itemService';
 import ItemCard from '../components/items/ItemCard';
 import ItemFilters from '../components/items/ItemFilters';
 import ItemForm from '../components/items/ItemForm';
 
 const Items = () => {
+  const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -42,26 +44,32 @@ const Items = () => {
 
   // Cargar items
   useEffect(() => {
-    loadItems();
-  }, [page, filters]);
+    if (user?.id) {
+      loadItems();
+    }
+  }, [page, filters, user?.id]);
 
   const loadItems = async () => {
+    if (!user?.id) return;
+
     try {
       setLoading(true);
       setError('');
-      const response = await itemService.getAll(page, 12, filters);
+      // Obtener solo los items de los locales del usuario
+      const data = await itemService.getByUsuarioLocales(user.id);
 
-      // El backend devuelve paginación
-      if (response.data.content) {
-        setItems(response.data.content);
-        setTotalPages(response.data.totalPages);
-        setTotalElements(response.data.totalElements);
-      } else {
-        // Si no hay paginación, mostrar todos los items
-        setItems(response.data);
-        setTotalPages(1);
-        setTotalElements(response.data.length);
+      // Filtrar items si hay búsqueda
+      let filteredItems = data || [];
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase();
+        filteredItems = filteredItems.filter(item =>
+          item.descripcion?.toLowerCase().includes(searchLower)
+        );
       }
+
+      setItems(filteredItems);
+      setTotalPages(1);
+      setTotalElements(filteredItems.length);
     } catch (err) {
       setError(err.response?.data?.message || 'Error al cargar items');
       console.error('Error loading items:', err);

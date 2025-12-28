@@ -16,9 +16,14 @@ import {
   Grid,
   Box,
   CircularProgress,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
+  FormLabel,
 } from '@mui/material';
 import { useAuth } from '../../hooks/useAuth';
 import localService from '../../services/localService';
+import bandaService from '../../services/bandaService';
 
 // Schema de validación
 const itemSchema = yup.object({
@@ -36,6 +41,17 @@ const itemSchema = yup.object({
     .number()
     .required('Debes seleccionar un local')
     .typeError('Debes seleccionar un local'),
+  propietarioTipo: yup
+    .string()
+    .required('Debes seleccionar el tipo de propietario')
+    .oneOf(['usuario', 'banda']),
+  bandaId: yup
+    .mixed()
+    .when('propietarioTipo', {
+      is: 'banda',
+      then: (schema) => schema.required('Debes seleccionar una banda').test('is-number', 'Debes seleccionar una banda', value => typeof value === 'number'),
+      otherwise: (schema) => schema.nullable().notRequired(),
+    }),
 });
 
 const ItemForm = ({ open, onClose, onSubmit, item, loading }) => {
@@ -43,11 +59,14 @@ const ItemForm = ({ open, onClose, onSubmit, item, loading }) => {
   const isEditing = !!item;
   const [locales, setLocales] = useState([]);
   const [loadingLocales, setLoadingLocales] = useState(false);
+  const [bandas, setBandas] = useState([]);
+  const [loadingBandas, setLoadingBandas] = useState(false);
 
   const {
     control,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm({
     resolver: yupResolver(itemSchema),
@@ -55,26 +74,76 @@ const ItemForm = ({ open, onClose, onSubmit, item, loading }) => {
       descripcion: '',
       cantidad: 1,
       localId: '',
+      propietarioTipo: 'usuario',
+      bandaId: '',
     },
   });
 
-  // Cargar locales cuando se abre el formulario
+  const propietarioTipo = watch('propietarioTipo');
+  const bandaId = watch('bandaId');
+
+  // Cargar locales y bandas cuando se abre el formulario
   useEffect(() => {
     if (open) {
       loadLocales();
+      loadBandas();
     }
   }, [open]);
+
+  // Cuando se selecciona una banda, autocompletar el local con el local de la banda
+  useEffect(() => {
+    if (propietarioTipo === 'banda' && bandaId && bandas.length > 0) {
+      const bandaSeleccionada = bandas.find(b => b.id === bandaId);
+      if (bandaSeleccionada?.local?.id) {
+        reset(prev => ({
+          ...prev,
+          localId: bandaSeleccionada.local.id
+        }), { keepDirty: true });
+      }
+    }
+  }, [bandaId, propietarioTipo, bandas, reset]);
 
   const loadLocales = async () => {
     try {
       setLoadingLocales(true);
-      const data = await localService.getAll();
-      setLocales(data);
+      const response = await localService.getAll();
+      setLocales(response.data || []);
     } catch (error) {
       console.error('Error loading locales:', error);
       setLocales([]);
     } finally {
       setLoadingLocales(false);
+    }
+  };
+
+  const loadBandas = async () => {
+    try {
+      setLoadingBandas(true);
+      const response = await bandaService.getAll();
+      const todasBandas = response.data || [];
+      // Filtrar bandas donde el usuario es miembro
+      const bandasDelUsuario = todasBandas.filter(banda =>
+        banda.miembros && banda.miembros.some(m => m.id === user.id)
+      );
+      setBandas(bandasDelUsuario);
+    } catch (error) {
+      console.error('Error loading bandas:', error);
+      setBandas([]);
+    } finally {
+      setLoadingBandas(false);
+    }
+  };
+
+  // Obtener locales disponibles según el tipo de propietario
+  const getLocalesDisponibles = () => {
+    if (propietarioTipo === 'banda') {
+      // Si es banda, solo mostrar locales de las bandas del usuario
+      const localesIds = [...new Set(bandas.map(b => b.local?.id).filter(Boolean))];
+      return locales.filter(local => localesIds.includes(local.id));
+    } else {
+      // Si es usuario, mostrar locales de las bandas del usuario
+      const localesIds = [...new Set(bandas.map(b => b.local?.id).filter(Boolean))];
+      return locales.filter(local => localesIds.includes(local.id));
     }
   };
 
@@ -85,13 +154,17 @@ const ItemForm = ({ open, onClose, onSubmit, item, loading }) => {
         reset({
           descripcion: item.descripcion || '',
           cantidad: item.cantidad || 1,
-          localId: item.local?.id || '',
+          localId: item.localOriginal?.id || item.localActual?.id || '',
+          propietarioTipo: item.propietarioBanda ? 'banda' : 'usuario',
+          bandaId: item.propietarioBanda?.id || '',
         });
       } else {
         reset({
           descripcion: '',
           cantidad: 1,
           localId: '',
+          propietarioTipo: 'usuario',
+          bandaId: '',
         });
       }
     }
@@ -102,9 +175,16 @@ const ItemForm = ({ open, onClose, onSubmit, item, loading }) => {
     const itemData = {
       descripcion: data.descripcion,
       cantidad: data.cantidad,
-      usuario: { id: user.id },
-      local: { id: data.localId },
+      localOriginal: { id: data.localId },
+      localActual: { id: data.localId }, // Al crear, ambos son el mismo
     };
+
+    // Agregar propietario según el tipo seleccionado
+    if (data.propietarioTipo === 'usuario') {
+      itemData.propietarioUsuario = { id: user.id };
+    } else {
+      itemData.propietarioBanda = { id: data.bandaId };
+    }
 
     onSubmit(itemData);
   };
@@ -119,6 +199,65 @@ const ItemForm = ({ open, onClose, onSubmit, item, loading }) => {
         <DialogContent>
           <Box sx={{ pt: 1 }}>
             <Grid container spacing={2}>
+              {/* Tipo de propietario */}
+              <Grid item xs={12}>
+                <Controller
+                  name="propietarioTipo"
+                  control={control}
+                  render={({ field }) => (
+                    <FormControl component="fieldset">
+                      <FormLabel component="legend">Propietario *</FormLabel>
+                      <RadioGroup {...field} row>
+                        <FormControlLabel value="usuario" control={<Radio />} label="Yo (usuario)" />
+                        <FormControlLabel value="banda" control={<Radio />} label="Mi banda" />
+                      </RadioGroup>
+                    </FormControl>
+                  )}
+                />
+              </Grid>
+
+              {/* Selector de banda (solo si propietarioTipo es 'banda') */}
+              {propietarioTipo === 'banda' && (
+                <Grid item xs={12}>
+                  <Controller
+                    name="bandaId"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControl fullWidth required error={!!errors.bandaId}>
+                        <InputLabel>Banda</InputLabel>
+                        <Select
+                          {...field}
+                          label="Banda"
+                          disabled={loadingBandas}
+                        >
+                          {loadingBandas ? (
+                            <MenuItem disabled>
+                              <CircularProgress size={20} sx={{ mr: 1 }} />
+                              Cargando bandas...
+                            </MenuItem>
+                          ) : bandas.length === 0 ? (
+                            <MenuItem disabled>
+                              No tienes bandas
+                            </MenuItem>
+                          ) : (
+                            bandas.map((banda) => (
+                              <MenuItem key={banda.id} value={banda.id}>
+                                {banda.nombre}
+                              </MenuItem>
+                            ))
+                          )}
+                        </Select>
+                        {errors.bandaId && (
+                          <Box component="span" sx={{ color: 'error.main', fontSize: '0.75rem', mt: 0.5, ml: 2 }}>
+                            {errors.bandaId.message}
+                          </Box>
+                        )}
+                      </FormControl>
+                    )}
+                  />
+                </Grid>
+              )}
+
               {/* Descripción */}
               <Grid item xs={12}>
                 <Controller
@@ -165,38 +304,43 @@ const ItemForm = ({ open, onClose, onSubmit, item, loading }) => {
                 <Controller
                   name="localId"
                   control={control}
-                  render={({ field }) => (
-                    <FormControl fullWidth required error={!!errors.localId}>
-                      <InputLabel>Local</InputLabel>
-                      <Select
-                        {...field}
-                        label="Local"
-                        disabled={loadingLocales}
-                      >
-                        {loadingLocales ? (
-                          <MenuItem disabled>
-                            <CircularProgress size={20} sx={{ mr: 1 }} />
-                            Cargando locales...
-                          </MenuItem>
-                        ) : locales.length === 0 ? (
-                          <MenuItem disabled>
-                            No hay locales disponibles
-                          </MenuItem>
-                        ) : (
-                          locales.map((local) => (
-                            <MenuItem key={local.id} value={local.id}>
-                              {local.nombre}
+                  render={({ field }) => {
+                    const localesDisponibles = getLocalesDisponibles();
+                    return (
+                      <FormControl fullWidth required error={!!errors.localId}>
+                        <InputLabel>Local</InputLabel>
+                        <Select
+                          {...field}
+                          label="Local"
+                          disabled={loadingLocales || (propietarioTipo === 'banda' && bandaId)}
+                        >
+                          {loadingLocales ? (
+                            <MenuItem disabled>
+                              <CircularProgress size={20} sx={{ mr: 1 }} />
+                              Cargando locales...
                             </MenuItem>
-                          ))
+                          ) : localesDisponibles.length === 0 ? (
+                            <MenuItem disabled>
+                              {propietarioTipo === 'usuario'
+                                ? 'No tienes bandas con locales asignados'
+                                : 'No hay locales disponibles'}
+                            </MenuItem>
+                          ) : (
+                            localesDisponibles.map((local) => (
+                              <MenuItem key={local.id} value={local.id}>
+                                {local.nombre}
+                              </MenuItem>
+                            ))
+                          )}
+                        </Select>
+                        {errors.localId && (
+                          <Box component="span" sx={{ color: 'error.main', fontSize: '0.75rem', mt: 0.5, ml: 2 }}>
+                            {errors.localId.message}
+                          </Box>
                         )}
-                      </Select>
-                      {errors.localId && (
-                        <Box component="span" sx={{ color: 'error.main', fontSize: '0.75rem', mt: 0.5, ml: 2 }}>
-                          {errors.localId.message}
-                        </Box>
-                      )}
-                    </FormControl>
-                  )}
+                      </FormControl>
+                    );
+                  }}
                 />
               </Grid>
             </Grid>

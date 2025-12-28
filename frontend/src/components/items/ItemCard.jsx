@@ -15,20 +15,33 @@ import {
 } from '@mui/icons-material';
 
 const ItemCard = ({ item, onEdit, onDelete, onView }) => {
-  // Color del chip según disponibilidad
+  // Determinar si está prestado (localActual diferente de localOriginal)
+  const isPrestado = item.localOriginal?.id !== item.localActual?.id;
+
+  // Color del chip según estado
   const getAvailabilityColor = () => {
-    if (item.prestadoA) {
+    if (isPrestado) {
       return 'error'; // Rojo si está prestado
     }
-    return 'success'; // Disponible
+    return 'success'; // Verde si está disponible
   };
 
-  // Texto del chip según disponibilidad
+  // Texto del chip según estado
   const getAvailabilityText = () => {
-    if (item.prestadoA) {
-      return `Prestado a ${item.prestadoA.nombre}`;
+    if (isPrestado) {
+      return `Prestado en ${item.localActual?.nombre || 'otro local'}`;
     }
     return 'Disponible';
+  };
+
+  // Obtener nombre del propietario
+  const getPropietarioNombre = () => {
+    if (item.propietarioUsuario) {
+      return `${item.propietarioUsuario.nombre} ${item.propietarioUsuario.apellido}`;
+    } else if (item.propietarioBanda) {
+      return `Banda: ${item.propietarioBanda.nombre}`;
+    }
+    return 'N/A';
   };
 
   return (
@@ -60,19 +73,30 @@ const ItemCard = ({ item, onEdit, onDelete, onView }) => {
 
         <Box sx={{ mb: 1 }}>
           <Typography variant="caption" color="text.secondary">
-            Local:
+            Ubicación actual:
           </Typography>
           <Typography variant="body2" fontWeight={500}>
-            {item.local?.nombre || 'N/A'}
+            {item.localActual?.nombre || 'N/A'}
           </Typography>
         </Box>
+
+        {isPrestado && (
+          <Box sx={{ mb: 1 }}>
+            <Typography variant="caption" color="text.secondary">
+              Local original:
+            </Typography>
+            <Typography variant="body2" fontWeight={500}>
+              {item.localOriginal?.nombre || 'N/A'}
+            </Typography>
+          </Box>
+        )}
 
         <Box sx={{ mb: 1 }}>
           <Typography variant="caption" color="text.secondary">
             Propietario:
           </Typography>
           <Typography variant="body2" fontWeight={500}>
-            {item.usuario ? `${item.usuario.nombre} ${item.usuario.apellido}` : 'N/A'}
+            {getPropietarioNombre()}
           </Typography>
         </Box>
 

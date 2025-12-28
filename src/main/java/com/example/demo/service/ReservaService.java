@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.model.*;
+import com.example.demo.repository.BandaRepository;
 import com.example.demo.repository.ReservaAprobacionRepository;
 import com.example.demo.repository.ReservaRepository;
 import com.example.demo.repository.UsuarioLocalRepository;
@@ -9,8 +10,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ReservaService {
@@ -24,6 +27,9 @@ public class ReservaService {
     @Autowired
     private UsuarioLocalRepository usuarioLocalRepository;
 
+    @Autowired
+    private BandaRepository bandaRepository;
+
     public List<Reserva> findAll() {
         return reservaRepository.findAll();
     }
@@ -34,6 +40,39 @@ public class ReservaService {
 
     public List<Reserva> findByUsuarioId(Long usuarioId) {
         return reservaRepository.findByUsuarioId(usuarioId);
+    }
+
+    // Obtener TODAS las reservas de los locales del usuario
+    // Esto permite que todos los usuarios del local vean todas las reservas
+    // para evitar solapamientos y organizar el espacio compartido
+    public List<Reserva> findByUsuarioYBandas(Long usuarioId) {
+        java.util.Set<Long> localIds = new java.util.HashSet<>();
+
+        // 1. Agregar locales donde el usuario está directamente (tabla UsuarioLocal)
+        List<UsuarioLocal> usuarioLocales = usuarioLocalRepository.findByUsuarioId(usuarioId);
+        for (UsuarioLocal ul : usuarioLocales) {
+            localIds.add(ul.getLocal().getId());
+        }
+
+        // 2. Agregar locales de las bandas del usuario
+        List<Banda> bandasDelUsuario = bandaRepository.findAll().stream()
+                .filter(banda -> banda.getMiembros() != null &&
+                        banda.getMiembros().stream().anyMatch(m -> m.getId().equals(usuarioId)))
+                .collect(Collectors.toList());
+
+        for (Banda banda : bandasDelUsuario) {
+            if (banda.getLocal() != null) {
+                localIds.add(banda.getLocal().getId());
+            }
+        }
+
+        // 3. Obtener TODAS las reservas de esos locales
+        List<Reserva> todasReservas = new ArrayList<>();
+        for (Long localId : localIds) {
+            todasReservas.addAll(reservaRepository.findByLocalId(localId));
+        }
+
+        return todasReservas;
     }
 
     public List<Reserva> findByLocalId(Long localId) {
@@ -99,13 +138,57 @@ public class ReservaService {
     }
 
     private void crearAprobaciones(Reserva reserva) {
-        List<UsuarioLocal> usuariosDelLocal = usuarioLocalRepository.findByLocalId(reserva.getLocal().getId());
+        Long localId = reserva.getLocal().getId();
+        Long usuarioSolicitanteId = reserva.getUsuario().getId();
 
+        // Set para evitar duplicados
+        java.util.Set<Long> usuariosIds = new java.util.HashSet<>();
+
+        // 1. Agregar usuarios directos del local (tabla UsuarioLocal)
+        List<UsuarioLocal> usuariosDelLocal = usuarioLocalRepository.findByLocalId(localId);
         for (UsuarioLocal ul : usuariosDelLocal) {
-            if (!ul.getUsuario().getId().equals(reserva.getUsuario().getId())) {
+            if (!ul.getUsuario().getId().equals(usuarioSolicitanteId)) {
+                usuariosIds.add(ul.getUsuario().getId());
+            }
+        }
+
+        // 2. Agregar miembros de TODAS las bandas que están en este local
+        List<Banda> bandasDelLocal = bandaRepository.findAll().stream()
+                .filter(banda -> banda.getLocal() != null && banda.getLocal().getId().equals(localId))
+                .collect(Collectors.toList());
+
+        for (Banda banda : bandasDelLocal) {
+            if (banda.getMiembros() != null) {
+                for (Usuario miembro : banda.getMiembros()) {
+                    if (!miembro.getId().equals(usuarioSolicitanteId)) {
+                        usuariosIds.add(miembro.getId());
+                    }
+                }
+            }
+        }
+
+        // 3. Crear aprobaciones para todos los usuarios únicos
+        for (Long usuarioId : usuariosIds) {
+            // Buscar el usuario completo
+            Optional<Usuario> usuarioOpt = usuariosDelLocal.stream()
+                    .map(UsuarioLocal::getUsuario)
+                    .filter(u -> u.getId().equals(usuarioId))
+                    .findFirst();
+
+            // Si no está en UsuarioLocal, buscarlo de las bandas
+            if (usuarioOpt.isEmpty()) {
+                for (Banda banda : bandasDelLocal) {
+                    usuarioOpt = banda.getMiembros().stream()
+                            .filter(u -> u.getId().equals(usuarioId))
+                            .findFirst();
+                    if (usuarioOpt.isPresent()) break;
+                }
+            }
+
+            if (usuarioOpt.isPresent()) {
                 ReservaAprobacion aprobacion = new ReservaAprobacion();
                 aprobacion.setReserva(reserva);
-                aprobacion.setUsuario(ul.getUsuario());
+                aprobacion.setUsuario(usuarioOpt.get());
                 aprobacion.setAprobada(null);
                 aprobacionRepository.save(aprobacion);
             }

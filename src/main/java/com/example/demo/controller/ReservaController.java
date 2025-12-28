@@ -37,6 +37,11 @@ public class ReservaController {
         return reservaService.findByUsuarioId(usuarioId);
     }
 
+    @GetMapping("/usuario/{usuarioId}/compartidas")
+    public List<Reserva> getReservasCompartidasByUsuario(@PathVariable Long usuarioId) {
+        return reservaService.findByUsuarioYBandas(usuarioId);
+    }
+
     @GetMapping("/local/{localId}")
     public List<Reserva> getReservasByLocal(@PathVariable Long localId) {
         return reservaService.findByLocalId(localId);

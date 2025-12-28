@@ -19,8 +19,13 @@ public class Reserva {
 
     @ManyToOne
     @JoinColumn(name = "local_id", nullable = false)
-    @JsonIgnoreProperties({"admin", "usuarioLocales", "items", "invitaciones", "reservas"})
+    @JsonIgnoreProperties({"admin", "usuarioLocales", "items", "invitaciones", "reservas", "bandas"})
     private Local local;
+
+    @ManyToOne
+    @JoinColumn(name = "banda_id")
+    @JsonIgnoreProperties({"items", "miembros", "local"})
+    private Banda banda;
 
     @Column(name = "fecha_inicio", nullable = false)
     private LocalDateTime fechaInicio;
@@ -63,6 +68,14 @@ public class Reserva {
 
     public void setLocal(Local local) {
         this.local = local;
+    }
+
+    public Banda getBanda() {
+        return banda;
+    }
+
+    public void setBanda(Banda banda) {
+        this.banda = banda;
     }
 
     public LocalDateTime getFechaInicio() {

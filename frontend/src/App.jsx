@@ -13,7 +13,10 @@ import Dashboard from './pages/Dashboard';
 import Items from './pages/Items';
 import Locales from './pages/Locales';
 import Usuarios from './pages/Usuarios';
-import Invitaciones from './pages/Invitaciones';
+import Bandas from './pages/Bandas';
+import MisBandas from './pages/MisBandas';
+import Prestamos from './pages/Prestamos';
+import Reservas from './pages/Reservas';
 import Profile from './pages/Profile';
 
 function App() {
@@ -69,11 +72,41 @@ function App() {
               }
             />
             <Route
-              path="/invitaciones"
+              path="/bandas"
               element={
                 <ProtectedRoute>
                   <MainLayout>
-                    <Invitaciones />
+                    <Bandas />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/mis-bandas"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <MisBandas />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/prestamos"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <Prestamos />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/reservas"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <Reservas />
                   </MainLayout>
                 </ProtectedRoute>
               }
