@@ -79,6 +79,14 @@ const reservaService = {
     });
     return response.data;
   },
+
+  // Obtener eventos de calendario para un mes específico
+  getCalendarEvents: async (usuarioId, year, month) => {
+    const response = await api.get(`/reservas/usuario/${usuarioId}/calendario`, {
+      params: { year, month }
+    });
+    return response.data;
+  },
 };
 
 export default reservaService;

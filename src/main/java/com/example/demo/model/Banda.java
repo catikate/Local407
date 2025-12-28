@@ -20,6 +20,9 @@ public class Banda {
     @Column(length = 500)
     private String descripcion;
 
+    @Column(name = "color", length = 7)
+    private String color = "#2196F3";
+
     @ManyToOne
     @JoinColumn(name = "local_id", nullable = false)
     private Local local;
@@ -72,6 +75,14 @@ public class Banda {
 
     public void setDescripcion(String descripcion) {
         this.descripcion = descripcion;
+    }
+
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
     }
 
     public Local getLocal() {

@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.model.*;
+import com.example.demo.repository.BandaRepository;
 import com.example.demo.repository.ReservaAprobacionRepository;
 import com.example.demo.repository.ReservaRepository;
 import com.example.demo.repository.UsuarioLocalRepository;
@@ -34,6 +35,9 @@ class ReservaServiceTest {
     @Mock
     private UsuarioLocalRepository usuarioLocalRepository;
 
+    @Mock
+    private BandaRepository bandaRepository;
+
     @InjectMocks
     private ReservaService reservaService;
 
@@ -60,6 +64,7 @@ class ReservaServiceTest {
         testReserva.setFechaInicio(LocalDateTime.now());
         testReserva.setFechaFin(LocalDateTime.now().plusHours(2));
         testReserva.setEsReservaDiaCompleto(false);
+        testReserva.setTipoEvento(TipoEvento.ENSAYO); // Default
 
         testAprobacion = new ReservaAprobacion();
         testAprobacion.setId(1L);
@@ -180,6 +185,7 @@ class ReservaServiceTest {
     @Test
     void testSave_WithConflictingReserva_ThrowsException() {
         testReserva.setId(null);
+        testReserva.setTipoEvento(TipoEvento.ENSAYO);
         Reserva conflictingReserva = new Reserva();
 
         when(reservaRepository.findConflictingReservas(anyLong(), any(), any()))
@@ -187,7 +193,7 @@ class ReservaServiceTest {
 
         assertThatThrownBy(() -> reservaService.save(testReserva))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessage("Ya existe una reserva en ese horario");
+                .hasMessage("Ya existe una reserva en ese horario en el local");
 
         verify(reservaRepository, never()).save(any(Reserva.class));
     }
@@ -262,5 +268,149 @@ class ReservaServiceTest {
         reservaService.deleteById(1L);
 
         verify(reservaRepository, times(1)).deleteById(1L);
+    }
+
+    // Tests para validaciones por tipo de evento
+
+    @Test
+    void testSave_EnsayoWithoutLocal_ThrowsException() {
+        testReserva.setId(null);
+        testReserva.setTipoEvento(TipoEvento.ENSAYO);
+        testReserva.setLocal(null);
+
+        assertThatThrownBy(() -> reservaService.save(testReserva))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("El local es obligatorio para ensayos");
+
+        verify(reservaRepository, never()).save(any(Reserva.class));
+    }
+
+    @Test
+    void testSave_ShowWithoutBanda_ThrowsException() {
+        testReserva.setId(null);
+        testReserva.setTipoEvento(TipoEvento.SHOW);
+        testReserva.setBanda(null);
+
+        assertThatThrownBy(() -> reservaService.save(testReserva))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("La banda es obligatoria para shows");
+
+        verify(reservaRepository, never()).save(any(Reserva.class));
+    }
+
+    @Test
+    void testSave_ShowWithConflictingBanda_ThrowsException() {
+        testReserva.setId(null);
+        testReserva.setTipoEvento(TipoEvento.SHOW);
+        Banda testBanda = new Banda();
+        testBanda.setId(1L);
+        testReserva.setBanda(testBanda);
+
+        Reserva conflictingShow = new Reserva();
+        when(reservaRepository.findConflictingShowsForBanda(anyLong(), any(), any()))
+                .thenReturn(Arrays.asList(conflictingShow));
+
+        assertThatThrownBy(() -> reservaService.save(testReserva))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("La banda ya tiene un show en ese horario");
+
+        verify(reservaRepository, never()).save(any(Reserva.class));
+    }
+
+    @Test
+    void testSave_ShowPersonalWithConflict_ThrowsException() {
+        testReserva.setId(null);
+        testReserva.setTipoEvento(TipoEvento.SHOW_PERSONAL);
+        testReserva.setLocal(null); // Personal shows don't require local
+
+        Reserva conflictingPersonalShow = new Reserva();
+        when(reservaRepository.findConflictingPersonalShows(anyLong(), any(), any()))
+                .thenReturn(Arrays.asList(conflictingPersonalShow));
+
+        assertThatThrownBy(() -> reservaService.save(testReserva))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Ya tienes un show personal en ese horario");
+
+        verify(reservaRepository, never()).save(any(Reserva.class));
+    }
+
+    @Test
+    void testSave_ShowPersonalWithoutConflict_CreatesSuccessfully() {
+        testReserva.setId(null);
+        testReserva.setTipoEvento(TipoEvento.SHOW_PERSONAL);
+        testReserva.setLocal(null);
+
+        when(reservaRepository.findConflictingPersonalShows(anyLong(), any(), any()))
+                .thenReturn(Collections.emptyList());
+        when(reservaRepository.save(any(Reserva.class))).thenReturn(testReserva);
+
+        Reserva result = reservaService.save(testReserva);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getEstado()).isEqualTo(ReservaEstado.CONFIRMADA);
+        verify(reservaRepository, times(1)).save(any(Reserva.class));
+    }
+
+    @Test
+    void testSave_ShowWithValidBanda_CreatesSuccessfully() {
+        testReserva.setId(null);
+        testReserva.setTipoEvento(TipoEvento.SHOW);
+        Banda testBanda = new Banda();
+        testBanda.setId(1L);
+        testReserva.setBanda(testBanda);
+
+        when(reservaRepository.findConflictingShowsForBanda(anyLong(), any(), any()))
+                .thenReturn(Collections.emptyList());
+        when(reservaRepository.save(any(Reserva.class))).thenReturn(testReserva);
+
+        Reserva result = reservaService.save(testReserva);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getEstado()).isEqualTo(ReservaEstado.CONFIRMADA);
+        verify(reservaRepository, times(1)).save(any(Reserva.class));
+    }
+
+    @Test
+    void testSave_EnsayoDiaCompletoCreatesAprobaciones_ShowDoesNot() {
+        // ENSAYO día completo debe crear aprobaciones
+        testReserva.setId(null);
+        testReserva.setTipoEvento(TipoEvento.ENSAYO);
+        testReserva.setEsReservaDiaCompleto(true);
+
+        Usuario otherUser = new Usuario();
+        otherUser.setId(2L);
+        UsuarioLocal otherUsuarioLocal = new UsuarioLocal();
+        otherUsuarioLocal.setUsuario(otherUser);
+        otherUsuarioLocal.setLocal(testLocal);
+
+        when(reservaRepository.findConflictingReservas(anyLong(), any(), any()))
+                .thenReturn(Collections.emptyList());
+        when(reservaRepository.save(any(Reserva.class))).thenReturn(testReserva);
+        when(usuarioLocalRepository.findByLocalId(1L))
+                .thenReturn(Arrays.asList(usuarioLocal, otherUsuarioLocal));
+
+        reservaService.save(testReserva);
+
+        verify(aprobacionRepository, times(1)).save(any(ReservaAprobacion.class));
+
+        // SHOW no debe crear aprobaciones incluso si esReservaDiaCompleto es true
+        Reserva showReserva = new Reserva();
+        showReserva.setUsuario(testUsuario);
+        showReserva.setTipoEvento(TipoEvento.SHOW);
+        showReserva.setEsReservaDiaCompleto(true); // Esto no debería importar
+        Banda banda = new Banda();
+        banda.setId(1L);
+        showReserva.setBanda(banda);
+        showReserva.setFechaInicio(LocalDateTime.now());
+        showReserva.setFechaFin(LocalDateTime.now().plusHours(2));
+
+        when(reservaRepository.findConflictingShowsForBanda(anyLong(), any(), any()))
+                .thenReturn(Collections.emptyList());
+        when(reservaRepository.save(any(Reserva.class))).thenReturn(showReserva);
+
+        reservaService.save(showReserva);
+
+        // Solo debe haber sido llamado 1 vez (por el ENSAYO), no por el SHOW
+        verify(aprobacionRepository, times(1)).save(any(ReservaAprobacion.class));
     }
 }

@@ -85,12 +85,12 @@ class ItemServiceTest {
 
     @Test
     void testFindByLocalId_ReturnsFilteredItems() {
-        when(itemRepository.findByLocalId(1L)).thenReturn(Arrays.asList(testItem));
+        when(itemRepository.findByLocalActualId(1L)).thenReturn(Arrays.asList(testItem));
 
         List<Item> result = itemService.findByLocalId(1L);
 
         assertThat(result).hasSize(1);
-        verify(itemRepository, times(1)).findByLocalId(1L);
+        verify(itemRepository, times(1)).findByLocalActualId(1L);
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.CalendarEventDTO;
 import com.example.demo.model.*;
 import com.example.demo.service.ReservaService;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +21,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -54,6 +56,7 @@ class ReservaControllerTest {
         testReserva.setFechaFin(LocalDateTime.now().plusHours(2));
         testReserva.setEstado(ReservaEstado.CONFIRMADA);
         testReserva.setEsReservaDiaCompleto(false);
+        testReserva.setTipoEvento(TipoEvento.ENSAYO);
 
         testAprobacion = new ReservaAprobacion();
         testAprobacion.setId(1L);
@@ -259,5 +262,87 @@ class ReservaControllerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         verify(reservaService, times(1)).responderAprobacion(999L, true);
+    }
+
+    // Tests para endpoint de calendario
+
+    @Test
+    void testGetCalendarEvents_ReturnsListOfEvents() {
+        LocalDateTime startOfMonth = LocalDateTime.of(2025, 1, 1, 0, 0);
+        LocalDateTime endOfMonth = startOfMonth.plusMonths(1);
+
+        List<Reserva> reservas = Arrays.asList(testReserva);
+        when(reservaService.findByUsuarioAndMonth(1L, startOfMonth, endOfMonth))
+                .thenReturn(reservas);
+
+        ResponseEntity<List<CalendarEventDTO>> response =
+            reservaController.getCalendarEvents(1L, 2025, 1);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody()).hasSize(1);
+        verify(reservaService, times(1)).findByUsuarioAndMonth(eq(1L), any(LocalDateTime.class), any(LocalDateTime.class));
+    }
+
+    @Test
+    void testGetCalendarEvents_WithDifferentMonth_ReturnsFilteredEvents() {
+        LocalDateTime startOfMonth = LocalDateTime.of(2025, 12, 1, 0, 0);
+        LocalDateTime endOfMonth = startOfMonth.plusMonths(1);
+
+        when(reservaService.findByUsuarioAndMonth(1L, startOfMonth, endOfMonth))
+                .thenReturn(Arrays.asList());
+
+        ResponseEntity<List<CalendarEventDTO>> response =
+            reservaController.getCalendarEvents(1L, 2025, 12);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody()).isEmpty();
+    }
+
+    @Test
+    void testGetCalendarEvents_MapsReservasToDTO() {
+        testReserva.setColor("#FF0000");
+        testReserva.setTipoEvento(TipoEvento.SHOW);
+        Banda banda = new Banda();
+        banda.setNombre("Test Band");
+        testReserva.setBanda(banda);
+
+        LocalDateTime startOfMonth = LocalDateTime.of(2025, 1, 1, 0, 0);
+        LocalDateTime endOfMonth = startOfMonth.plusMonths(1);
+
+        when(reservaService.findByUsuarioAndMonth(1L, startOfMonth, endOfMonth))
+                .thenReturn(Arrays.asList(testReserva));
+
+        ResponseEntity<List<CalendarEventDTO>> response =
+            reservaController.getCalendarEvents(1L, 2025, 1);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody()).hasSize(1);
+
+        CalendarEventDTO event = response.getBody().get(0);
+        assertThat(event.getId()).isEqualTo(1L);
+        assertThat(event.getColor()).isEqualTo("#FF0000");
+        assertThat(event.getTipo()).isEqualTo(TipoEvento.SHOW);
+        assertThat(event.getBandaNombre()).isEqualTo("Test Band");
+    }
+
+    @Test
+    void testCreateReserva_WithNullTipoEvento_SetsDefaultToEnsayo() {
+        Reserva reservaSinTipo = new Reserva();
+        reservaSinTipo.setUsuario(testUsuario);
+        reservaSinTipo.setLocal(testLocal);
+        reservaSinTipo.setFechaInicio(LocalDateTime.now());
+        reservaSinTipo.setFechaFin(LocalDateTime.now().plusHours(2));
+        // No se setea tipoEvento
+
+        when(reservaService.save(any(Reserva.class))).thenReturn(testReserva);
+
+        ResponseEntity<?> response = reservaController.createReserva(reservaSinTipo);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        // Verificar que se llamó save con una reserva que tiene tipoEvento ENSAYO
+        verify(reservaService, times(1)).save(any(Reserva.class));
     }
 }

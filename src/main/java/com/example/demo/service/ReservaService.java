@@ -97,22 +97,22 @@ public class ReservaService {
             throw new IllegalArgumentException("La fecha de inicio debe ser anterior a la fecha de fin");
         }
 
-        List<Reserva> conflictos = reservaRepository.findConflictingReservas(
-            reserva.getLocal().getId(),
-            reserva.getFechaInicio(),
-            reserva.getFechaFin()
-        );
+        // Validación específica por tipo
+        validateByTipo(reserva);
 
-        if (!conflictos.isEmpty()) {
-            throw new IllegalStateException("Ya existe una reserva en ese horario");
+        // Asignar color si no está definido
+        if (reserva.getColor() == null) {
+            reserva.setColor(determinarColor(reserva));
         }
 
-        if (reserva.getEsReservaDiaCompleto()) {
+        // Workflow de aprobación SOLO para ENSAYO día completo
+        if (reserva.getTipoEvento() == TipoEvento.ENSAYO && reserva.getEsReservaDiaCompleto()) {
             reserva.setEstado(ReservaEstado.PENDIENTE_APROBACIONES);
             Reserva reservaGuardada = reservaRepository.save(reserva);
             crearAprobaciones(reservaGuardada);
             return reservaGuardada;
         } else {
+            // Todo lo demás: confirmación inmediata
             reserva.setEstado(ReservaEstado.CONFIRMADA);
             return reservaRepository.save(reserva);
         }
@@ -123,18 +123,126 @@ public class ReservaService {
             throw new IllegalArgumentException("La fecha de inicio debe ser anterior a la fecha de fin");
         }
 
-        List<Reserva> conflictos = reservaRepository.findConflictingReservasExcluding(
-            reserva.getLocal().getId(),
-            reserva.getId(),
-            reserva.getFechaInicio(),
-            reserva.getFechaFin()
-        );
-
-        if (!conflictos.isEmpty()) {
-            throw new IllegalStateException("Ya existe una reserva en ese horario");
-        }
+        // Validación por tipo (excluyendo la reserva actual)
+        validateByTipoExcluding(reserva);
 
         return reservaRepository.save(reserva);
+    }
+
+    private void validateByTipo(Reserva reserva) {
+        switch (reserva.getTipoEvento()) {
+            case ENSAYO:
+                if (reserva.getLocal() == null) {
+                    throw new IllegalArgumentException("El local es obligatorio para ensayos");
+                }
+                List<Reserva> conflictosLocal = reservaRepository.findConflictingReservas(
+                    reserva.getLocal().getId(),
+                    reserva.getFechaInicio(),
+                    reserva.getFechaFin()
+                );
+                if (!conflictosLocal.isEmpty()) {
+                    throw new IllegalStateException("Ya existe una reserva en ese horario en el local");
+                }
+                break;
+
+            case SHOW:
+                if (reserva.getBanda() == null) {
+                    throw new IllegalArgumentException("La banda es obligatoria para shows");
+                }
+                List<Reserva> conflictosShow = reservaRepository.findConflictingShowsForBanda(
+                    reserva.getBanda().getId(),
+                    reserva.getFechaInicio(),
+                    reserva.getFechaFin()
+                );
+                if (!conflictosShow.isEmpty()) {
+                    throw new IllegalStateException("La banda ya tiene un show en ese horario");
+                }
+                break;
+
+            case SHOW_PERSONAL:
+                List<Reserva> conflictosPersonal = reservaRepository.findConflictingPersonalShows(
+                    reserva.getUsuario().getId(),
+                    reserva.getFechaInicio(),
+                    reserva.getFechaFin()
+                );
+                if (!conflictosPersonal.isEmpty()) {
+                    throw new IllegalStateException("Ya tienes un show personal en ese horario");
+                }
+                break;
+        }
+    }
+
+    private void validateByTipoExcluding(Reserva reserva) {
+        switch (reserva.getTipoEvento()) {
+            case ENSAYO:
+                if (reserva.getLocal() == null) {
+                    throw new IllegalArgumentException("El local es obligatorio para ensayos");
+                }
+                List<Reserva> conflictosLocal = reservaRepository.findConflictingReservasExcluding(
+                    reserva.getLocal().getId(),
+                    reserva.getId(),
+                    reserva.getFechaInicio(),
+                    reserva.getFechaFin()
+                );
+                if (!conflictosLocal.isEmpty()) {
+                    throw new IllegalStateException("Ya existe una reserva en ese horario en el local");
+                }
+                break;
+
+            case SHOW:
+                if (reserva.getBanda() == null) {
+                    throw new IllegalArgumentException("La banda es obligatoria para shows");
+                }
+                // For SHOW, we need to find conflicting shows excluding current
+                // Since we don't have a method for this, we'll check all and filter
+                List<Reserva> conflictosShow = reservaRepository.findConflictingShowsForBanda(
+                    reserva.getBanda().getId(),
+                    reserva.getFechaInicio(),
+                    reserva.getFechaFin()
+                );
+                conflictosShow = conflictosShow.stream()
+                    .filter(r -> !r.getId().equals(reserva.getId()))
+                    .collect(Collectors.toList());
+                if (!conflictosShow.isEmpty()) {
+                    throw new IllegalStateException("La banda ya tiene un show en ese horario");
+                }
+                break;
+
+            case SHOW_PERSONAL:
+                List<Reserva> conflictosPersonal = reservaRepository.findConflictingPersonalShows(
+                    reserva.getUsuario().getId(),
+                    reserva.getFechaInicio(),
+                    reserva.getFechaFin()
+                );
+                conflictosPersonal = conflictosPersonal.stream()
+                    .filter(r -> !r.getId().equals(reserva.getId()))
+                    .collect(Collectors.toList());
+                if (!conflictosPersonal.isEmpty()) {
+                    throw new IllegalStateException("Ya tienes un show personal en ese horario");
+                }
+                break;
+        }
+    }
+
+    private String determinarColor(Reserva reserva) {
+        switch (reserva.getTipoEvento()) {
+            case ENSAYO:
+                if (reserva.getBanda() != null && reserva.getBanda().getColor() != null) {
+                    return reserva.getBanda().getColor();
+                } else if (reserva.getLocal() != null && reserva.getLocal().getColor() != null) {
+                    return reserva.getLocal().getColor();
+                }
+                return "#4CAF50"; // Default green
+            case SHOW:
+                if (reserva.getBanda() != null && reserva.getBanda().getColor() != null) {
+                    return reserva.getBanda().getColor();
+                }
+                return "#2196F3"; // Default blue
+            case SHOW_PERSONAL:
+                return "#9C27B0"; // Purple
+            default:
+                return "#757575"; // Gray
+        }
     }
 
     private void crearAprobaciones(Reserva reserva) {
@@ -245,5 +353,9 @@ public class ReservaService {
 
     public void deleteById(Long id) {
         reservaRepository.deleteById(id);
+    }
+
+    public List<Reserva> findByUsuarioAndMonth(Long usuarioId, LocalDateTime startDate, LocalDateTime endDate) {
+        return reservaRepository.findByUsuarioAndMonth(usuarioId, startDate, endDate);
     }
 }

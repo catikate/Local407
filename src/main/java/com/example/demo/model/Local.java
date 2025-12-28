@@ -17,6 +17,9 @@ public class Local {
     @Column(nullable = false)
     private String nombre;
 
+    @Column(name = "color", length = 7)
+    private String color = "#4CAF50";
+
     @ManyToOne
     @JoinColumn(name = "admin_id", nullable = false)
     private Usuario admin;
@@ -56,6 +59,14 @@ public class Local {
 
     public void setNombre(String nombre) {
         this.nombre = nombre;
+    }
+
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
     }
 
     public Usuario getAdmin() {

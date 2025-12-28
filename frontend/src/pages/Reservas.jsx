@@ -14,11 +14,14 @@ import {
   Tabs,
   Tab,
   Badge,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import { Add as AddIcon, ViewList, CalendarMonth } from '@mui/icons-material';
 import reservaService from '../services/reservaService';
 import ReservaCard from '../components/reservas/ReservaCard';
 import ReservaForm from '../components/reservas/ReservaForm';
+import CalendarView from '../components/reservas/CalendarView';
 import { useAuth } from '../hooks/useAuth';
 
 function Reservas() {
@@ -28,6 +31,8 @@ function Reservas() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [tabValue, setTabValue] = useState(0);
+  const [viewMode, setViewMode] = useState('list');
+  const [eventos, setEventos] = useState([]);
   const { user } = useAuth();
 
   // Estado del formulario
@@ -74,6 +79,31 @@ function Reservas() {
       console.error('Error loading aprobaciones:', err);
     }
   };
+
+  const loadEventosCalendario = async (date = new Date()) => {
+    try {
+      const data = await reservaService.getCalendarEvents(
+        user.id,
+        date.getFullYear(),
+        date.getMonth() + 1
+      );
+      setEventos(data);
+    } catch (err) {
+      console.error('Error loading calendar events:', err);
+    }
+  };
+
+  // Manejar cambio de mes en el calendario
+  const handleMonthChange = (newDate) => {
+    loadEventosCalendario(newDate);
+  };
+
+  // Cargar eventos cuando cambia a vista calendario
+  useEffect(() => {
+    if (user && viewMode === 'calendar') {
+      loadEventosCalendario();
+    }
+  }, [viewMode, user]);
 
   // Manejar cambio de tab
   const handleTabChange = (event, newValue) => {
@@ -186,13 +216,28 @@ function Reservas() {
         <Typography variant="h4" component="h1" fontWeight={600}>
           Reservas
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleCreate}
-        >
-          Nueva Reserva
-        </Button>
+        <Box display="flex" gap={2}>
+          <ToggleButtonGroup
+            value={viewMode}
+            exclusive
+            onChange={(e, newMode) => newMode && setViewMode(newMode)}
+            aria-label="vista de reservas"
+          >
+            <ToggleButton value="list" aria-label="vista de lista">
+              <ViewList />
+            </ToggleButton>
+            <ToggleButton value="calendar" aria-label="vista de calendario">
+              <CalendarMonth />
+            </ToggleButton>
+          </ToggleButtonGroup>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleCreate}
+          >
+            Nueva Reserva
+          </Button>
+        </Box>
       </Box>
 
       {/* Tabs */}
@@ -219,32 +264,45 @@ function Reservas() {
       {/* Tab Panel: Mis Reservas */}
       {!loading && tabValue === 0 && (
         <>
-          {reservas.length > 0 ? (
-            <Grid container spacing={3}>
-              {reservas.map((reserva) => (
-                <Grid item xs={12} sm={6} md={4} key={reserva.id}>
-                  <ReservaCard
-                    reserva={reserva}
-                    onEdit={handleEdit}
-                    onDelete={handleDeleteClick}
-                    onView={handleView}
-                    currentUserId={user.id}
-                  />
-                </Grid>
-              ))}
-            </Grid>
+          {viewMode === 'calendar' ? (
+            <CalendarView
+              eventos={eventos}
+              onEventClick={(evento) => {
+                const reserva = reservas.find(r => r.id === evento.id);
+                if (reserva) handleView(reserva);
+              }}
+              onMonthChange={handleMonthChange}
+            />
           ) : (
-            <Box textAlign="center" py={8}>
-              <Typography variant="h6" color="text.secondary" gutterBottom>
-                No tienes reservas
-              </Typography>
-              <Typography variant="body2" color="text.secondary" mb={3}>
-                Crea tu primera reserva para comenzar
-              </Typography>
-              <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-                Nueva Reserva
-              </Button>
-            </Box>
+            <>
+              {reservas.length > 0 ? (
+                <Grid container spacing={3}>
+                  {reservas.map((reserva) => (
+                    <Grid item xs={12} sm={6} md={4} key={reserva.id}>
+                      <ReservaCard
+                        reserva={reserva}
+                        onEdit={handleEdit}
+                        onDelete={handleDeleteClick}
+                        onView={handleView}
+                        currentUserId={user.id}
+                      />
+                    </Grid>
+                  ))}
+                </Grid>
+              ) : (
+                <Box textAlign="center" py={8}>
+                  <Typography variant="h6" color="text.secondary" gutterBottom>
+                    No tienes reservas
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" mb={3}>
+                    Crea tu primera reserva para comenzar
+                  </Typography>
+                  <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
+                    Nueva Reserva
+                  </Button>
+                </Box>
+              )}
+            </>
           )}
         </>
       )}

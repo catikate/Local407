@@ -18,7 +18,7 @@ public class Reserva {
     private Usuario usuario;
 
     @ManyToOne
-    @JoinColumn(name = "local_id", nullable = false)
+    @JoinColumn(name = "local_id", nullable = true)
     @JsonIgnoreProperties({"admin", "usuarioLocales", "items", "invitaciones", "reservas", "bandas"})
     private Local local;
 
@@ -26,6 +26,10 @@ public class Reserva {
     @JoinColumn(name = "banda_id")
     @JsonIgnoreProperties({"items", "miembros", "local"})
     private Banda banda;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_evento", nullable = false)
+    private TipoEvento tipoEvento = TipoEvento.ENSAYO;
 
     @Column(name = "fecha_inicio", nullable = false)
     private LocalDateTime fechaInicio;
@@ -42,6 +46,9 @@ public class Reserva {
 
     @Column(length = 500)
     private String notas;
+
+    @Column(name = "color", length = 7)
+    private String color;
 
     public Reserva() {
     }
@@ -116,5 +123,21 @@ public class Reserva {
 
     public void setNotas(String notas) {
         this.notas = notas;
+    }
+
+    public TipoEvento getTipoEvento() {
+        return tipoEvento;
+    }
+
+    public void setTipoEvento(TipoEvento tipoEvento) {
+        this.tipoEvento = tipoEvento;
+    }
+
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
     }
 }
