@@ -15,6 +15,11 @@ import {
   CalendarToday as CalendarIcon,
   Schedule as ScheduleIcon,
   LocationOn as LocationIcon,
+  MusicNote as MusicNoteIcon,
+  Star as StarIcon,
+  Person as PersonIcon,
+  Event as EventIcon,
+  Groups as GroupsIcon,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -67,6 +72,65 @@ const ReservaCard = ({ reserva, onEdit, onDelete, onView, currentUserId }) => {
     }
   };
 
+  // Obtener label del tipo de evento
+  const getTipoEventoLabel = () => {
+    if (reserva.tipoEvento === 'ENSAYO') {
+      return reserva.esReservaDiaCompleto ? 'ENSAYO TODO EL DÍA' : 'ENSAYO';
+    } else if (reserva.tipoEvento === 'SHOW') {
+      return 'SHOW BANDA';
+    } else if (reserva.tipoEvento === 'SHOW_PERSONAL') {
+      return 'SHOW SOLISTA';
+    }
+    return reserva.tipoEvento;
+  };
+
+  // Icono del chip de tipo de evento
+  const getTipoEventoIcon = () => {
+    if (reserva.tipoEvento === 'ENSAYO') {
+      return reserva.esReservaDiaCompleto ? <EventIcon /> : <MusicNoteIcon />;
+    } else if (reserva.tipoEvento === 'SHOW') {
+      return <StarIcon />;
+    } else if (reserva.tipoEvento === 'SHOW_PERSONAL') {
+      return <PersonIcon />;
+    }
+    return null;
+  };
+
+  // Estilo del chip de tipo de evento con colores distintivos
+  const getTipoEventoStyle = () => {
+    if (reserva.tipoEvento === 'ENSAYO') {
+      if (reserva.esReservaDiaCompleto) {
+        // Ensayo todo el día - Púrpura oscuro
+        return {
+          backgroundColor: '#9C27B0',
+          color: 'white',
+          fontWeight: 600,
+        };
+      }
+      // Ensayo normal - Verde
+      return {
+        backgroundColor: '#4CAF50',
+        color: 'white',
+        fontWeight: 600,
+      };
+    } else if (reserva.tipoEvento === 'SHOW') {
+      // Show banda - Azul
+      return {
+        backgroundColor: '#2196F3',
+        color: 'white',
+        fontWeight: 600,
+      };
+    } else if (reserva.tipoEvento === 'SHOW_PERSONAL') {
+      // Show solista - Naranja
+      return {
+        backgroundColor: '#FF9800',
+        color: 'white',
+        fontWeight: 600,
+      };
+    }
+    return {};
+  };
+
   const isOwner = reserva.usuario?.id === currentUserId;
 
   return (
@@ -83,31 +147,50 @@ const ReservaCard = ({ reserva, onEdit, onDelete, onView, currentUserId }) => {
       }}
     >
       <CardContent sx={{ flexGrow: 1 }}>
+        {/* Tipo de Evento - PROMINENTE */}
+        <Box sx={{ mb: 2 }}>
+          <Chip
+            icon={getTipoEventoIcon()}
+            label={getTipoEventoLabel()}
+            size="medium"
+            sx={{
+              ...getTipoEventoStyle(),
+              fontSize: '0.875rem',
+              height: 32,
+            }}
+          />
+        </Box>
+
         {/* Estado */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 2 }}>
+        <Box sx={{ mb: 2 }}>
           <Chip
             label={getEstadoTexto()}
             color={getEstadoColor()}
             size="small"
+            variant="outlined"
             sx={{ fontWeight: 500 }}
           />
-          {reserva.esReservaDiaCompleto && (
-            <Chip
-              label="Día completo"
-              variant="outlined"
-              size="small"
-              sx={{ fontWeight: 500 }}
-            />
-          )}
         </Box>
 
         {/* Local */}
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-          <LocationIcon sx={{ mr: 1, fontSize: 20, color: 'text.secondary' }} />
-          <Typography variant="h6" component="h3" fontWeight={600}>
-            {reserva.local?.nombre || 'Local no especificado'}
-          </Typography>
-        </Box>
+        {reserva.local && (
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+            <LocationIcon sx={{ mr: 1, fontSize: 20, color: 'text.secondary' }} />
+            <Typography variant="h6" component="h3" fontWeight={600}>
+              {reserva.local.nombre}
+            </Typography>
+          </Box>
+        )}
+
+        {/* Banda */}
+        {reserva.banda && (
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+            <GroupsIcon sx={{ mr: 1, fontSize: 20, color: 'text.secondary' }} />
+            <Typography variant="h6" component="h3" fontWeight={600}>
+              {reserva.banda.nombre}
+            </Typography>
+          </Box>
+        )}
 
         {/* Fecha */}
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
