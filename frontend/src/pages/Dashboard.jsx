@@ -19,7 +19,11 @@ import {
   Business as BusinessIcon,
   CalendarMonth as CalendarIcon,
   ChevronRight as ChevronRightIcon,
-  SwapHoriz as SwapIcon
+  SwapHoriz as SwapIcon,
+  MusicNote as MusicNoteIcon,
+  Star as StarIcon,
+  Person as PersonIcon,
+  Event as EventIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -115,6 +119,65 @@ const Dashboard = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  // Helper para obtener el label del tipo de evento
+  const getTipoEventoLabel = (reserva) => {
+    if (reserva.tipoEvento === 'ENSAYO') {
+      return reserva.esReservaDiaCompleto ? 'ENSAYO TODO EL DÍA' : 'ENSAYO';
+    } else if (reserva.tipoEvento === 'SHOW') {
+      return 'SHOW BANDA';
+    } else if (reserva.tipoEvento === 'SHOW_PERSONAL') {
+      return 'SHOW SOLISTA';
+    }
+    return reserva.tipoEvento || 'ENSAYO';
+  };
+
+  // Helper para obtener el icono del tipo de evento
+  const getTipoEventoIcon = (reserva) => {
+    if (reserva.tipoEvento === 'ENSAYO') {
+      return reserva.esReservaDiaCompleto ? <EventIcon fontSize="small" /> : <MusicNoteIcon fontSize="small" />;
+    } else if (reserva.tipoEvento === 'SHOW') {
+      return <StarIcon fontSize="small" />;
+    } else if (reserva.tipoEvento === 'SHOW_PERSONAL') {
+      return <PersonIcon fontSize="small" />;
+    }
+    return <MusicNoteIcon fontSize="small" />;
+  };
+
+  // Helper para obtener el estilo del chip de tipo de evento
+  const getTipoEventoStyle = (reserva) => {
+    if (reserva.tipoEvento === 'ENSAYO') {
+      if (reserva.esReservaDiaCompleto) {
+        return {
+          backgroundColor: '#9C27B0',
+          color: 'white',
+          fontWeight: 600,
+        };
+      }
+      return {
+        backgroundColor: '#4CAF50',
+        color: 'white',
+        fontWeight: 600,
+      };
+    } else if (reserva.tipoEvento === 'SHOW') {
+      return {
+        backgroundColor: '#2196F3',
+        color: 'white',
+        fontWeight: 600,
+      };
+    } else if (reserva.tipoEvento === 'SHOW_PERSONAL') {
+      return {
+        backgroundColor: '#FF9800',
+        color: 'white',
+        fontWeight: 600,
+      };
+    }
+    return {
+      backgroundColor: '#4CAF50',
+      color: 'white',
+      fontWeight: 600,
+    };
   };
 
   if (loading) {
@@ -441,21 +504,35 @@ const Dashboard = () => {
                     <ListItem
                       key={aprobacion.id}
                       divider={index < Math.min(data.aprobacionesPendientes.length, 3) - 1}
-                      sx={{ px: 0 }}
+                      sx={{ px: 0, alignItems: 'flex-start', py: 1.5 }}
                     >
                       <ListItemText
                         primary={
                           <Box>
-                            Reserva de día completo - {aprobacion.reserva?.local?.nombre}
-                            {aprobacion.reserva?.banda && (
-                              <Chip
-                                label={aprobacion.reserva.banda.nombre}
-                                size="small"
-                                sx={{ ml: 1 }}
-                                color="primary"
-                                variant="outlined"
-                              />
-                            )}
+                            {/* Chip de tipo de evento */}
+                            <Chip
+                              icon={getTipoEventoIcon(aprobacion.reserva)}
+                              label={getTipoEventoLabel(aprobacion.reserva)}
+                              size="small"
+                              sx={{
+                                ...getTipoEventoStyle(aprobacion.reserva),
+                                fontSize: '0.75rem',
+                                height: 24,
+                                mb: 0.5,
+                              }}
+                            />
+                            <Box sx={{ mt: 0.5 }}>
+                              {aprobacion.reserva?.local?.nombre}
+                              {aprobacion.reserva?.banda && (
+                                <Chip
+                                  label={aprobacion.reserva.banda.nombre}
+                                  size="small"
+                                  sx={{ ml: 1 }}
+                                  color="primary"
+                                  variant="outlined"
+                                />
+                              )}
+                            </Box>
                           </Box>
                         }
                         secondary={
@@ -512,21 +589,35 @@ const Dashboard = () => {
                     <ListItem
                       key={reserva.id}
                       divider={index < data.reservas.length - 1}
-                      sx={{ px: 0 }}
+                      sx={{ px: 0, alignItems: 'flex-start', py: 1.5 }}
                     >
                       <ListItemText
                         primary={
                           <Box>
-                            {reserva.local?.nombre}
-                            {reserva.banda && (
-                              <Chip
-                                label={reserva.banda.nombre}
-                                size="small"
-                                sx={{ ml: 1 }}
-                                color="primary"
-                                variant="outlined"
-                              />
-                            )}
+                            {/* Chip de tipo de evento - PROMINENTE */}
+                            <Chip
+                              icon={getTipoEventoIcon(reserva)}
+                              label={getTipoEventoLabel(reserva)}
+                              size="small"
+                              sx={{
+                                ...getTipoEventoStyle(reserva),
+                                fontSize: '0.75rem',
+                                height: 24,
+                                mb: 0.5,
+                              }}
+                            />
+                            <Box sx={{ mt: 0.5 }}>
+                              {reserva.local?.nombre}
+                              {reserva.banda && (
+                                <Chip
+                                  label={reserva.banda.nombre}
+                                  size="small"
+                                  sx={{ ml: 1 }}
+                                  color="primary"
+                                  variant="outlined"
+                                />
+                              )}
+                            </Box>
                           </Box>
                         }
                         secondary={formatDate(reserva.fechaInicio)}
