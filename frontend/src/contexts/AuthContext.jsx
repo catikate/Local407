@@ -9,6 +9,7 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const currentUser = authService.getCurrentUser();
+    console.log('AuthContext - Usuario cargado:', currentUser);
     setUser(currentUser);
     setLoading(false);
   }, []);

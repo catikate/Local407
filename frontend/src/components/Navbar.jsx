@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import NotificationBadge from './common/NotificationBadge';
 
 function Navbar() {
   const { user, logout, isAuthenticated } = useAuth();
@@ -22,6 +23,7 @@ function Navbar() {
             <Link to="/locales">Locales</Link>
             <Link to="/reservas">Reservas</Link>
             <Link to="/invitaciones">Invitaciones</Link>
+            <NotificationBadge />
             <span className="navbar-user">
               {user?.nombre}
             </span>

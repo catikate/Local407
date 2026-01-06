@@ -30,6 +30,9 @@ public class ReservaService {
     @Autowired
     private BandaRepository bandaRepository;
 
+    @Autowired
+    private NotificationService notificationService;
+
     public List<Reserva> findAll() {
         return reservaRepository.findAll();
     }
@@ -110,11 +113,29 @@ public class ReservaService {
             reserva.setEstado(ReservaEstado.PENDIENTE_APROBACIONES);
             Reserva reservaGuardada = reservaRepository.save(reserva);
             crearAprobaciones(reservaGuardada);
+
+            // Notificar reserva pendiente de aprobación
+            try {
+                notificationService.notificarReservaPendiente(reservaGuardada);
+            } catch (Exception e) {
+                // Log error pero no fallar la creación de la reserva
+                System.err.println("Error enviando notificaciones: " + e.getMessage());
+            }
+
             return reservaGuardada;
         } else {
             // Todo lo demás: confirmación inmediata
             reserva.setEstado(ReservaEstado.CONFIRMADA);
-            return reservaRepository.save(reserva);
+            Reserva reservaGuardada = reservaRepository.save(reserva);
+
+            // Notificar nueva reserva creada
+            try {
+                notificationService.notificarReservaCreada(reservaGuardada, reserva.getUsuario());
+            } catch (Exception e) {
+                System.err.println("Error enviando notificaciones: " + e.getMessage());
+            }
+
+            return reservaGuardada;
         }
     }
 
@@ -331,6 +352,15 @@ public class ReservaService {
         if (hayRechazos) {
             reserva.setEstado(ReservaEstado.RECHAZADA);
             reservaRepository.save(reserva);
+
+            // Notificar reserva rechazada
+            try {
+                String razon = "Uno o más usuarios rechazaron la reserva";
+                notificationService.notificarReservaRechazada(reserva, razon);
+            } catch (Exception e) {
+                System.err.println("Error enviando notificaciones: " + e.getMessage());
+            }
+
             return;
         }
 
@@ -338,6 +368,13 @@ public class ReservaService {
         if (todasAprobadas && !aprobaciones.isEmpty()) {
             reserva.setEstado(ReservaEstado.APROBADA);
             reservaRepository.save(reserva);
+
+            // Notificar reserva aprobada
+            try {
+                notificationService.notificarReservaAprobada(reserva);
+            } catch (Exception e) {
+                System.err.println("Error enviando notificaciones: " + e.getMessage());
+            }
         }
     }
 
@@ -352,6 +389,20 @@ public class ReservaService {
     }
 
     public void deleteById(Long id) {
+        // Obtener reserva antes de eliminarla para notificar
+        Optional<Reserva> reservaOpt = reservaRepository.findById(id);
+
+        if (reservaOpt.isPresent()) {
+            Reserva reserva = reservaOpt.get();
+
+            // Notificar cancelación
+            try {
+                notificationService.notificarReservaCancelada(reserva, reserva.getUsuario());
+            } catch (Exception e) {
+                System.err.println("Error enviando notificaciones: " + e.getMessage());
+            }
+        }
+
         reservaRepository.deleteById(id);
     }
 
