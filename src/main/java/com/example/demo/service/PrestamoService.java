@@ -3,6 +3,8 @@ package com.example.demo.service;
 import com.example.demo.model.*;
 import com.example.demo.repository.PrestamoRepository;
 import com.example.demo.repository.ItemRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,11 +16,16 @@ import java.util.Optional;
 @Service
 public class PrestamoService {
 
+    private static final Logger log = LoggerFactory.getLogger(PrestamoService.class);
+
     @Autowired
     private PrestamoRepository prestamoRepository;
 
     @Autowired
     private ItemRepository itemRepository;
+
+    @Autowired
+    private NotificationService notificationService;
 
     public List<Prestamo> findAll() {
         return prestamoRepository.findAll();
@@ -82,7 +89,17 @@ public class PrestamoService {
             itemRepository.save(item);
         }
 
-        return prestamoRepository.save(prestamo);
+        Prestamo savedPrestamo = prestamoRepository.save(prestamo);
+
+        // Crear notificación para el propietario del item
+        try {
+            notificationService.notificarSolicitudPrestamo(savedPrestamo);
+            log.info("Notificación de préstamo creada para el préstamo ID: {}", savedPrestamo.getId());
+        } catch (Exception e) {
+            log.error("Error creando notificación de préstamo: {}", e.getMessage());
+        }
+
+        return savedPrestamo;
     }
 
     @Transactional
