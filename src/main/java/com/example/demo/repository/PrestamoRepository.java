@@ -35,4 +35,17 @@ public interface PrestamoRepository extends JpaRepository<Prestamo, Long> {
 
     @Query("SELECT p FROM Prestamo p WHERE p.prestadoABanda.id = :bandaId AND p.estado = 'ACTIVO'")
     List<Prestamo> findPrestamosActivosDeBanda(@Param("bandaId") Long bandaId);
+
+    // Para recordatorios de devolución
+    List<Prestamo> findByEstadoAndFechaDevolucionEsperadaBetween(
+        EstadoPrestamo estado,
+        LocalDateTime start,
+        LocalDateTime end
+    );
+
+    // Para verificar items vencidos
+    List<Prestamo> findByEstadoAndFechaDevolucionEsperadaBefore(
+        EstadoPrestamo estado,
+        LocalDateTime fecha
+    );
 }

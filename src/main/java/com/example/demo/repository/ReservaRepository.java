@@ -79,4 +79,7 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
         @Param("startDate") LocalDateTime startDate,
         @Param("endDate") LocalDateTime endDate
     );
+
+    // Para recordatorios de ensayos
+    List<Reserva> findByFechaInicioBetween(LocalDateTime start, LocalDateTime end);
 }
