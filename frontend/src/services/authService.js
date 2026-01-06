@@ -5,13 +5,13 @@ const authService = {
   // Login
   login: async (email, contrasenia) => {
     const response = await api.post('/auth/login', { email, contrasenia });
-    
+
     // Guardar token y usuario en localStorage
     if (response.data.token) {
       localStorage.setItem(TOKEN_KEY, response.data.token);
       localStorage.setItem(USER_KEY, JSON.stringify(response.data));
     }
-    
+
     return response.data;
   },
 

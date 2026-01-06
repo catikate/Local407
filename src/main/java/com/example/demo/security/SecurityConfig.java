@@ -42,7 +42,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:3000"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
 
@@ -60,6 +60,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()  // Allow OPTIONS for CORS preflight
                 .requestMatchers("/api/auth/**").permitAll()  // Public endpoints: login, register
                 .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll()  // Allow user registration
+                .requestMatchers(HttpMethod.POST, "/api/notifications/test-email").permitAll()  // Test endpoint
+                .requestMatchers(HttpMethod.POST, "/api/notifications/test-notifications/**").permitAll()  // Test notifications
                 .requestMatchers("/").permitAll()
                 .anyRequest().authenticated()  // All other endpoints require authentication
             )

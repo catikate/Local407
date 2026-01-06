@@ -6,7 +6,6 @@ import {
   IconButton,
   Typography,
   Box,
-  Badge,
   Avatar,
   Menu,
   MenuItem,
@@ -17,19 +16,18 @@ import {
 } from '@mui/material';
 import {
   Menu as MenuIcon,
-  Notifications as NotificationsIcon,
   Person as PersonIcon,
   Logout as LogoutIcon,
   Home as HomeIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../hooks/useAuth';
 import { DRAWER_WIDTH } from './Sidebar';
+import NotificationBell from './NotificationBell';
 
 const Navbar = ({ onDrawerToggle }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [anchorEl, setAnchorEl] = useState(null);
-  const [notifAnchorEl, setNotifAnchorEl] = useState(null);
 
   const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -37,14 +35,6 @@ const Navbar = ({ onDrawerToggle }) => {
 
   const handleMenuClose = () => {
     setAnchorEl(null);
-  };
-
-  const handleNotifOpen = (event) => {
-    setNotifAnchorEl(event.currentTarget);
-  };
-
-  const handleNotifClose = () => {
-    setNotifAnchorEl(null);
   };
 
   const handleProfile = () => {
@@ -104,15 +94,7 @@ const Navbar = ({ onDrawerToggle }) => {
         </Box>
 
         {/* Notifications */}
-        <IconButton
-          color="inherit"
-          onClick={handleNotifOpen}
-          sx={{ mr: 1 }}
-        >
-          <Badge badgeContent={0} color="error">
-            <NotificationsIcon />
-          </Badge>
-        </IconButton>
+        <NotificationBell />
 
         {/* User menu */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -160,28 +142,6 @@ const Navbar = ({ onDrawerToggle }) => {
             </ListItemIcon>
             Cerrar Sesión
           </MenuItem>
-        </Menu>
-
-        {/* Notifications menu */}
-        <Menu
-          anchorEl={notifAnchorEl}
-          open={Boolean(notifAnchorEl)}
-          onClose={handleNotifClose}
-          transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-          anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-          PaperProps={{
-            elevation: 3,
-            sx: {
-              mt: 1.5,
-              minWidth: 300,
-            },
-          }}
-        >
-          <Box sx={{ p: 2 }}>
-            <Typography variant="body2" color="text.secondary" textAlign="center">
-              No hay notificaciones nuevas
-            </Typography>
-          </Box>
         </Menu>
       </Toolbar>
     </AppBar>
