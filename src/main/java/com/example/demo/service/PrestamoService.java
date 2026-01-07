@@ -25,7 +25,7 @@ public class PrestamoService {
     private ItemRepository itemRepository;
 
     @Autowired
-    private NotificationService notificationService;
+    private NotificacionService notificationService;
 
     public List<Prestamo> findAll() {
         return prestamoRepository.findAll();
@@ -114,7 +114,31 @@ public class PrestamoService {
         prestamo.marcarComoDevuelto();
         itemRepository.save(prestamo.getItem());
 
-        return prestamoRepository.save(prestamo);
+        Prestamo updated = prestamoRepository.save(prestamo);
+
+        // Notificar devolución al propietario
+        try {
+            Usuario propietario = updated.getItem().getPropietarioUsuario();
+            if (propietario != null) {
+                notificationService.crearNotificacion(
+                    propietario,
+                    TipoNotificacion.ITEM_LOAN_APPROVED,
+                    "✅ Item Devuelto",
+                    String.format("%s devolvió: %s",
+                        updated.getPrestadoPor().getNombre(),
+                        updated.getItem().getDescripcion()
+                    ),
+                    "/prestamos/" + updated.getId(),
+                    PrioridadNotificacion.NORMAL,
+                    false
+                );
+            }
+            log.info("Notificación de devolución enviada");
+        } catch (Exception e) {
+            log.error("Error enviando notificación de devolución: {}", e.getMessage());
+        }
+
+        return updated;
     }
 
     @Transactional
@@ -128,6 +152,41 @@ public class PrestamoService {
 
     public Prestamo save(Prestamo prestamo) {
         return prestamoRepository.save(prestamo);
+    }
+
+    @Transactional
+    public Prestamo actualizarPrestamo(Prestamo existingPrestamo, Prestamo newPrestamo) {
+        EstadoPrestamo oldEstado = existingPrestamo.getEstado();
+        EstadoPrestamo newEstado = newPrestamo.getEstado();
+
+        // Actualizar préstamo
+        Prestamo updated = prestamoRepository.save(newPrestamo);
+
+        // Notificar cuando el item es devuelto
+        if (oldEstado != newEstado && newEstado == EstadoPrestamo.DEVUELTO) {
+            try {
+                Usuario propietario = updated.getItem().getPropietarioUsuario();
+                if (propietario != null) {
+                    notificationService.crearNotificacion(
+                        propietario,
+                        TipoNotificacion.ITEM_LOAN_APPROVED,
+                        "✅ Item Devuelto",
+                        String.format("%s devolvió: %s",
+                            updated.getPrestadoPor().getNombre(),
+                            updated.getItem().getDescripcion()
+                        ),
+                        "/prestamos/" + updated.getId(),
+                        PrioridadNotificacion.NORMAL,
+                        false
+                    );
+                }
+                log.info("Notificación de devolución enviada");
+            } catch (Exception e) {
+                log.error("Error enviando notificación de devolución: {}", e.getMessage());
+            }
+        }
+
+        return updated;
     }
 
     public void deleteById(Long id) {

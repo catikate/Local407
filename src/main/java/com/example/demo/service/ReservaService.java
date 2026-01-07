@@ -31,7 +31,7 @@ public class ReservaService {
     private BandaRepository bandaRepository;
 
     @Autowired
-    private NotificationService notificationService;
+    private NotificacionService notificationService;
 
     public List<Reserva> findAll() {
         return reservaRepository.findAll();
@@ -116,10 +116,20 @@ public class ReservaService {
 
             // Notificar reserva pendiente de aprobación
             try {
+                // Cargar banda completa con miembros si existe
+                if (reservaGuardada.getBanda() != null) {
+                    Banda bandaCompleta = bandaRepository.findById(reservaGuardada.getBanda().getId()).orElse(null);
+                    if (bandaCompleta != null) {
+                        // Forzar carga de miembros
+                        bandaCompleta.getMiembros().size();
+                        reservaGuardada.setBanda(bandaCompleta);
+                    }
+                }
                 notificationService.notificarReservaPendiente(reservaGuardada);
             } catch (Exception e) {
                 // Log error pero no fallar la creación de la reserva
-                System.err.println("Error enviando notificaciones: " + e.getMessage());
+                System.err.println("ERROR enviando notificaciones: " + e.getMessage());
+                e.printStackTrace();
             }
 
             return reservaGuardada;
@@ -130,9 +140,19 @@ public class ReservaService {
 
             // Notificar nueva reserva creada
             try {
+                // Cargar banda completa con miembros si existe
+                if (reservaGuardada.getBanda() != null) {
+                    Banda bandaCompleta = bandaRepository.findById(reservaGuardada.getBanda().getId()).orElse(null);
+                    if (bandaCompleta != null) {
+                        // Forzar carga de miembros
+                        bandaCompleta.getMiembros().size();
+                        reservaGuardada.setBanda(bandaCompleta);
+                    }
+                }
                 notificationService.notificarReservaCreada(reservaGuardada, reserva.getUsuario());
             } catch (Exception e) {
-                System.err.println("Error enviando notificaciones: " + e.getMessage());
+                System.err.println("ERROR enviando notificaciones: " + e.getMessage());
+                e.printStackTrace();
             }
 
             return reservaGuardada;
@@ -371,9 +391,18 @@ public class ReservaService {
 
             // Notificar reserva aprobada
             try {
+                // Cargar banda completa con miembros
+                if (reserva.getBanda() != null) {
+                    Banda bandaCompleta = bandaRepository.findById(reserva.getBanda().getId()).orElse(null);
+                    if (bandaCompleta != null) {
+                        bandaCompleta.getMiembros().size();
+                        reserva.setBanda(bandaCompleta);
+                    }
+                }
                 notificationService.notificarReservaAprobada(reserva);
             } catch (Exception e) {
                 System.err.println("Error enviando notificaciones: " + e.getMessage());
+                e.printStackTrace();
             }
         }
     }
@@ -397,9 +426,18 @@ public class ReservaService {
 
             // Notificar cancelación
             try {
+                // Cargar banda completa con miembros
+                if (reserva.getBanda() != null) {
+                    Banda bandaCompleta = bandaRepository.findById(reserva.getBanda().getId()).orElse(null);
+                    if (bandaCompleta != null) {
+                        bandaCompleta.getMiembros().size();
+                        reserva.setBanda(bandaCompleta);
+                    }
+                }
                 notificationService.notificarReservaCancelada(reserva, reserva.getUsuario());
             } catch (Exception e) {
                 System.err.println("Error enviando notificaciones: " + e.getMessage());
+                e.printStackTrace();
             }
         }
 

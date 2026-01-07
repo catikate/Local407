@@ -5,7 +5,7 @@ import com.example.demo.repository.PrestamoRepository;
 import com.example.demo.repository.ReservaRepository;
 import com.example.demo.repository.UsuarioRepository;
 import com.example.demo.service.EmailService;
-import com.example.demo.service.NotificationService;
+import com.example.demo.service.NotificacionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,12 +21,12 @@ import java.util.List;
  */
 @Component
 @EnableScheduling
-public class NotificationScheduler {
+public class NotificacionScheduler {
 
-    private static final Logger log = LoggerFactory.getLogger(NotificationScheduler.class);
+    private static final Logger log = LoggerFactory.getLogger(NotificacionScheduler.class);
 
     @Autowired
-    private NotificationService notificationService;
+    private NotificacionService notificationService;
 
     @Autowired
     private EmailService emailService;
@@ -59,11 +59,11 @@ public class NotificationScheduler {
                 // Crear notificación in-app
                 notificationService.crearNotificacion(
                     usuario,
-                    NotificationType.PAYMENT_REMINDER,
+                    TipoNotificacion.PAYMENT_REMINDER,
                     "💰 Recordatorio: Pago de Cuota Mensual",
                     "Hoy es día 4, fecha de pago de tu cuota mensual. Por favor, realiza el pago correspondiente.",
                     "/pagos",
-                    NotificationPriority.HIGH,
+                    PrioridadNotificacion.HIGH,
                     false
                 );
 
@@ -122,14 +122,14 @@ public class NotificationScheduler {
                     // Notificación in-app
                     notificationService.crearNotificacion(
                         miembro,
-                        NotificationType.REHEARSAL_REMINDER,
+                        TipoNotificacion.REHEARSAL_REMINDER,
                         "🎸 Recordatorio: Ensayo Mañana",
                         String.format("Tienes ensayo con %s mañana a las %s",
                             reserva.getBanda().getNombre(),
                             reserva.getFechaInicio().toLocalTime()
                         ),
                         "/reservas/" + reserva.getId(),
-                        NotificationPriority.NORMAL,
+                        PrioridadNotificacion.NORMAL,
                         false
                     );
 
@@ -185,13 +185,13 @@ public class NotificationScheduler {
                     // Notificación in-app
                     notificationService.crearNotificacion(
                         receptor,
-                        NotificationType.RETURN_ITEM_REMINDER,
+                        TipoNotificacion.RETURN_ITEM_REMINDER,
                         "📦 Recordatorio: Devolución de Item",
                         String.format("Mañana vence el plazo de devolución del item: %s",
                             prestamo.getItem().getDescripcion()
                         ),
                         "/prestamos/" + prestamo.getId(),
-                        NotificationPriority.HIGH,
+                        PrioridadNotificacion.HIGH,
                         false
                     );
 

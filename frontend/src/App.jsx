@@ -18,6 +18,7 @@ import MisBandas from './pages/MisBandas';
 import Prestamos from './pages/Prestamos';
 import Reservas from './pages/Reservas';
 import Profile from './pages/Profile';
+import Notifications from './pages/Notifications';
 
 function App() {
   return (
@@ -117,6 +118,16 @@ function App() {
                 <ProtectedRoute>
                   <MainLayout>
                     <Profile />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <Notifications />
                   </MainLayout>
                 </ProtectedRoute>
               }

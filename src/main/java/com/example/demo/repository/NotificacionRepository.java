@@ -1,23 +1,23 @@
 package com.example.demo.repository;
 
-import com.example.demo.model.Notification;
-import com.example.demo.model.NotificationType;
+import com.example.demo.model.Notificacion;
+import com.example.demo.model.TipoNotificacion;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 @Repository
-public interface NotificationRepository extends JpaRepository<Notification, Long> {
+public interface NotificacionRepository extends JpaRepository<Notificacion, Long> {
     /**
      * Obtener notificaciones no leídas de un usuario
      */
-    List<Notification> findByUsuarioIdAndIsReadFalseOrderByCreatedAtDesc(Long usuarioId);
+    List<Notificacion> findByUsuarioIdAndIsReadFalseOrderByCreatedAtDesc(Long usuarioId);
 
     /**
      * Obtener todas las notificaciones de un usuario
      */
-    List<Notification> findByUsuarioIdOrderByCreatedAtDesc(Long usuarioId);
+    List<Notificacion> findByUsuarioIdOrderByCreatedAtDesc(Long usuarioId);
 
     /**
      * Contar notificaciones no leídas de un usuario
@@ -27,16 +27,16 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     /**
      * Obtener notificaciones por tipo
      */
-    List<Notification> findByUsuarioIdAndTypeOrderByCreatedAtDesc(
+    List<Notificacion> findByUsuarioIdAndTypeOrderByCreatedAtDesc(
         Long usuarioId,
-        NotificationType type
+        TipoNotificacion type
     );
 
     /**
      * Obtener notificaciones no leídas por tipo
      */
-    List<Notification> findByUsuarioIdAndTypeAndIsReadFalseOrderByCreatedAtDesc(
+    List<Notificacion> findByUsuarioIdAndTypeAndIsReadFalseOrderByCreatedAtDesc(
         Long usuarioId,
-        NotificationType type
+        TipoNotificacion type
     );
 }

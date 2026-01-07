@@ -3,7 +3,7 @@ package com.example.demo.service;
 import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.exception.UnauthorizedException;
 import com.example.demo.model.*;
-import com.example.demo.repository.NotificationRepository;
+import com.example.demo.repository.NotificacionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,12 +18,12 @@ import java.util.List;
  */
 @Service
 @Transactional
-public class NotificationService {
+public class NotificacionService {
 
-    private static final Logger log = LoggerFactory.getLogger(NotificationService.class);
+    private static final Logger log = LoggerFactory.getLogger(NotificacionService.class);
 
     @Autowired
-    private NotificationRepository notificationRepository;
+    private NotificacionRepository notificationRepository;
 
     @Autowired
     private EmailService emailService;
@@ -31,17 +31,17 @@ public class NotificationService {
     /**
      * Crear notificación (in-app + email opcional)
      */
-    public Notification crearNotificacion(
+    public Notificacion crearNotificacion(
         Usuario usuario,
-        NotificationType type,
+        TipoNotificacion type,
         String title,
         String message,
         String actionUrl,
-        NotificationPriority priority,
+        PrioridadNotificacion priority,
         boolean sendEmail
     ) {
         // Crear notificación in-app
-        Notification notification = new Notification();
+        Notificacion notification = new Notificacion();
         notification.setUsuario(usuario);
         notification.setType(type);
         notification.setTitle(title);
@@ -82,7 +82,7 @@ public class NotificationService {
             if (!miembro.getId().equals(creador.getId())) {
                 crearNotificacion(
                     miembro,
-                    NotificationType.BOOKING_CREATED,
+                    TipoNotificacion.BOOKING_CREATED,
                     "Nueva reserva creada",
                     String.format("%s %s creó una reserva para %s el %s",
                         creador.getNombre(),
@@ -91,7 +91,7 @@ public class NotificationService {
                         reserva.getFechaInicio().toLocalDate()
                     ),
                     "/reservas/" + reserva.getId(),
-                    NotificationPriority.NORMAL,
+                    PrioridadNotificacion.NORMAL,
                     false
                 );
             }
@@ -102,21 +102,39 @@ public class NotificationService {
      * Notificar reserva pendiente de aprobación
      */
     public void notificarReservaPendiente(Reserva reserva) {
+        System.out.println("DEBUG NotificacionService: notificarReservaPendiente called");
+        System.out.println("DEBUG: Reserva ID: " + reserva.getId());
+        System.out.println("DEBUG: Banda: " + (reserva.getBanda() != null ? reserva.getBanda().getNombre() : "NULL"));
+
         // Notificar a todos los miembros de la banda
+        if (reserva.getBanda() == null) {
+            log.warn("No se pueden crear notificaciones: la reserva no tiene banda asignada");
+            return;
+        }
+
+        if (reserva.getBanda().getMiembros() == null || reserva.getBanda().getMiembros().isEmpty()) {
+            log.warn("No se pueden crear notificaciones: la banda no tiene miembros");
+            return;
+        }
+
+        System.out.println("DEBUG: Creando notificaciones para " + reserva.getBanda().getMiembros().size() + " miembros");
+
         for (Usuario miembro : reserva.getBanda().getMiembros()) {
+            System.out.println("DEBUG: Creando notificación para usuario: " + miembro.getNombre() + " " + miembro.getApellido() + " (ID: " + miembro.getId() + ")");
             crearNotificacion(
                 miembro,
-                NotificationType.BOOKING_PENDING_APPROVAL,
+                TipoNotificacion.BOOKING_PENDING_APPROVAL,
                 "Nueva reserva pendiente",
                 String.format("Hay una nueva reserva para %s el %s que requiere aprobación",
                     reserva.getBanda().getNombre(),
                     reserva.getFechaInicio().toLocalDate()
                 ),
                 "/reservas/" + reserva.getId(),
-                NotificationPriority.HIGH,
+                PrioridadNotificacion.HIGH,
                 true
             );
         }
+        System.out.println("DEBUG: Todas las notificaciones creadas");
     }
 
     /**
@@ -127,14 +145,14 @@ public class NotificationService {
             try {
                 crearNotificacion(
                     miembro,
-                    NotificationType.BOOKING_APPROVED,
+                    TipoNotificacion.BOOKING_APPROVED,
                     "✅ Reserva Aprobada",
                     String.format("La reserva de %s para el %s ha sido aprobada",
                         reserva.getBanda().getNombre(),
                         reserva.getFechaInicio().toLocalDate()
                     ),
                     "/reservas/" + reserva.getId(),
-                    NotificationPriority.HIGH,
+                    PrioridadNotificacion.HIGH,
                     false
                 );
 
@@ -155,7 +173,7 @@ public class NotificationService {
             try {
                 crearNotificacion(
                     miembro,
-                    NotificationType.BOOKING_REJECTED,
+                    TipoNotificacion.BOOKING_REJECTED,
                     "❌ Reserva Rechazada",
                     String.format("La reserva de %s para el %s ha sido rechazada. Razón: %s",
                         reserva.getBanda().getNombre(),
@@ -163,7 +181,7 @@ public class NotificationService {
                         razon != null ? razon : "No especificada"
                     ),
                     "/reservas/" + reserva.getId(),
-                    NotificationPriority.HIGH,
+                    PrioridadNotificacion.HIGH,
                     false
                 );
 
@@ -184,7 +202,7 @@ public class NotificationService {
             if (!miembro.getId().equals(canceladoPor.getId())) {
                 crearNotificacion(
                     miembro,
-                    NotificationType.BOOKING_CANCELLED,
+                    TipoNotificacion.BOOKING_CANCELLED,
                     "Reserva Cancelada",
                     String.format("%s canceló la reserva de %s del %s",
                         canceladoPor.getNombre(),
@@ -192,7 +210,7 @@ public class NotificationService {
                         reserva.getFechaInicio().toLocalDate()
                     ),
                     "/reservas",
-                    NotificationPriority.NORMAL,
+                    PrioridadNotificacion.NORMAL,
                     true
                 );
             }
@@ -203,22 +221,40 @@ public class NotificationService {
      * Notificar solicitud de préstamo de item
      */
     public void notificarSolicitudPrestamo(Prestamo prestamo) {
+        System.out.println("DEBUG: notificarSolicitudPrestamo called");
+        System.out.println("DEBUG: Prestamo ID: " + prestamo.getId());
+        System.out.println("DEBUG: Item: " + prestamo.getItem().getDescripcion());
+        System.out.println("DEBUG: prestadoPor (borrower): " + prestamo.getPrestadoPor().getNombre() + " " + prestamo.getPrestadoPor().getApellido() + " (ID: " + prestamo.getPrestadoPor().getId() + ")");
+
         Usuario propietario = prestamo.getItem().getPropietarioUsuario();
-        if (propietario == null) return;
+        System.out.println("DEBUG: Item propietarioUsuario (owner): " + (propietario != null ? propietario.getNombre() + " " + propietario.getApellido() + " (ID: " + propietario.getId() + ")" : "NULL"));
+
+        if (prestamo.getPrestadoAUsuario() != null) {
+            System.out.println("DEBUG: prestadoAUsuario (recipient): " + prestamo.getPrestadoAUsuario().getNombre() + " " + prestamo.getPrestadoAUsuario().getApellido() + " (ID: " + prestamo.getPrestadoAUsuario().getId() + ")");
+        }
+
+        if (propietario == null) {
+            log.warn("Cannot create notification: item has no owner");
+            return;
+        }
 
         try {
+            System.out.println("DEBUG: Creating notification for owner: " + propietario.getNombre() + " (ID: " + propietario.getId() + ")");
+
             crearNotificacion(
                 propietario,
-                NotificationType.ITEM_LOAN_REQUEST,
+                TipoNotificacion.ITEM_LOAN_REQUEST,
                 "📦 Solicitud de Préstamo",
                 String.format("%s solicita prestado: %s",
                     prestamo.getPrestadoPor().getNombre(),
                     prestamo.getItem().getDescripcion()
                 ),
                 "/prestamos/" + prestamo.getId(),
-                NotificationPriority.HIGH,
+                PrioridadNotificacion.HIGH,
                 false
             );
+
+            System.out.println("DEBUG: Notificacion created successfully");
 
             // Enviar email específico
             emailService.enviarSolicitudPrestamo(
@@ -230,6 +266,7 @@ public class NotificationService {
 
         } catch (Exception e) {
             log.error("Error notificando solicitud de préstamo: {}", e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -241,13 +278,13 @@ public class NotificationService {
 
         crearNotificacion(
             solicitante,
-            NotificationType.ITEM_LOAN_APPROVED,
+            TipoNotificacion.ITEM_LOAN_APPROVED,
             "✅ Préstamo Aprobado",
             String.format("Tu solicitud de préstamo de '%s' ha sido aprobada",
                 prestamo.getItem().getDescripcion()
             ),
             "/prestamos/" + prestamo.getId(),
-            NotificationPriority.NORMAL,
+            PrioridadNotificacion.NORMAL,
             true
         );
     }
@@ -260,13 +297,13 @@ public class NotificationService {
 
         crearNotificacion(
             solicitante,
-            NotificationType.ITEM_LOAN_REJECTED,
+            TipoNotificacion.ITEM_LOAN_REJECTED,
             "❌ Préstamo Rechazado",
             String.format("Tu solicitud de préstamo de '%s' ha sido rechazada",
                 prestamo.getItem().getDescripcion()
             ),
             "/prestamos/" + prestamo.getId(),
-            NotificationPriority.NORMAL,
+            PrioridadNotificacion.NORMAL,
             true
         );
     }
@@ -281,14 +318,14 @@ public class NotificationService {
         try {
             crearNotificacion(
                 propietario,
-                NotificationType.ITEM_OVERDUE,
+                TipoNotificacion.ITEM_OVERDUE,
                 "⚠️ Item No Devuelto",
                 String.format("El item '%s' prestado a %s NO ha sido devuelto",
                     prestamo.getItem().getDescripcion(),
                     prestamo.getReceptorNombre()
                 ),
                 "/prestamos/" + prestamo.getId(),
-                NotificationPriority.URGENT,
+                PrioridadNotificacion.URGENT,
                 false
             );
 
@@ -307,14 +344,14 @@ public class NotificationService {
         // Notificar al nuevo miembro
         crearNotificacion(
             nuevoMiembro,
-            NotificationType.MEMBER_ADDED,
+            TipoNotificacion.MEMBER_ADDED,
             "🎵 Te añadieron a una banda",
             String.format("%s te añadió a la banda %s",
                 añadidoPor.getNombre(),
                 banda.getNombre()
             ),
             "/bandas/" + banda.getId(),
-            NotificationPriority.HIGH,
+            PrioridadNotificacion.HIGH,
             true
         );
 
@@ -325,7 +362,7 @@ public class NotificationService {
 
                 crearNotificacion(
                     miembro,
-                    NotificationType.MEMBER_ADDED,
+                    TipoNotificacion.MEMBER_ADDED,
                     "Nuevo miembro en la banda",
                     String.format("%s añadió a %s a la banda %s",
                         añadidoPor.getNombre(),
@@ -333,7 +370,7 @@ public class NotificationService {
                         banda.getNombre()
                     ),
                     "/bandas/" + banda.getId(),
-                    NotificationPriority.LOW,
+                    PrioridadNotificacion.LOW,
                     false
                 );
             }
@@ -347,14 +384,14 @@ public class NotificationService {
         // Notificar al miembro eliminado
         crearNotificacion(
             miembroEliminado,
-            NotificationType.MEMBER_REMOVED,
+            TipoNotificacion.MEMBER_REMOVED,
             "Te eliminaron de una banda",
             String.format("%s te eliminó de la banda %s",
                 eliminadoPor.getNombre(),
                 banda.getNombre()
             ),
             "/bandas",
-            NotificationPriority.HIGH,
+            PrioridadNotificacion.HIGH,
             true
         );
     }
@@ -366,7 +403,7 @@ public class NotificationService {
         for (Usuario miembro : banda.getMiembros()) {
             crearNotificacion(
                 miembro,
-                NotificationType.LOCAL_CHANGED,
+                TipoNotificacion.LOCAL_CHANGED,
                 "Cambio de local de banda",
                 String.format("La banda %s cambió de local: %s → %s",
                     banda.getNombre(),
@@ -374,7 +411,7 @@ public class NotificationService {
                     localNuevo.getNombre()
                 ),
                 "/bandas/" + banda.getId(),
-                NotificationPriority.NORMAL,
+                PrioridadNotificacion.NORMAL,
                 true
             );
         }
@@ -384,7 +421,7 @@ public class NotificationService {
      * Marcar como leída
      */
     public void marcarComoLeida(Long notificationId, Long usuarioId) {
-        Notification notification = notificationRepository.findById(notificationId)
+        Notificacion notification = notificationRepository.findById(notificationId)
             .orElseThrow(() -> new ResourceNotFoundException("Notificación no encontrada"));
 
         // Verificar que pertenece al usuario
@@ -403,10 +440,10 @@ public class NotificationService {
      * Marcar todas como leídas
      */
     public void marcarTodasComoLeidas(Long usuarioId) {
-        List<Notification> notifications =
+        List<Notificacion> notifications =
             notificationRepository.findByUsuarioIdAndIsReadFalseOrderByCreatedAtDesc(usuarioId);
 
-        for (Notification n : notifications) {
+        for (Notificacion n : notifications) {
             n.setIsRead(true);
             n.setReadAt(LocalDateTime.now());
         }
@@ -418,14 +455,14 @@ public class NotificationService {
     /**
      * Obtener notificaciones no leídas
      */
-    public List<Notification> getNotificacionesNoLeidas(Long usuarioId) {
+    public List<Notificacion> getNotificacionesNoLeidas(Long usuarioId) {
         return notificationRepository.findByUsuarioIdAndIsReadFalseOrderByCreatedAtDesc(usuarioId);
     }
 
     /**
      * Obtener todas las notificaciones
      */
-    public List<Notification> getTodasLasNotificaciones(Long usuarioId) {
+    public List<Notificacion> getTodasLasNotificaciones(Long usuarioId) {
         return notificationRepository.findByUsuarioIdOrderByCreatedAtDesc(usuarioId);
     }
 
@@ -440,7 +477,7 @@ public class NotificationService {
      * Eliminar notificación
      */
     public void eliminarNotificacion(Long notificationId, Long usuarioId) {
-        Notification notification = notificationRepository.findById(notificationId)
+        Notificacion notification = notificationRepository.findById(notificationId)
             .orElseThrow(() -> new ResourceNotFoundException("Notificación no encontrada"));
 
         // Verificar que pertenece al usuario

@@ -1,10 +1,10 @@
 package com.example.demo.service;
 
-import com.example.demo.model.Notification;
-import com.example.demo.model.NotificationPriority;
-import com.example.demo.model.NotificationType;
+import com.example.demo.model.Notificacion;
+import com.example.demo.model.PrioridadNotificacion;
+import com.example.demo.model.TipoNotificacion;
 import com.example.demo.model.Usuario;
-import com.example.demo.repository.NotificationRepository;
+import com.example.demo.repository.NotificacionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,19 +21,19 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class NotificationServiceTest {
+class NotificacionServiceTest {
 
     @Mock
-    private NotificationRepository notificationRepository;
+    private NotificacionRepository notificationRepository;
 
     @Mock
     private EmailService emailService;
 
     @InjectMocks
-    private NotificationService notificationService;
+    private NotificacionService notificationService;
 
     private Usuario testUser;
-    private Notification testNotification;
+    private Notificacion testNotification;
 
     @BeforeEach
     void setUp() {
@@ -43,55 +43,55 @@ class NotificationServiceTest {
         testUser.setApellido("User");
         testUser.setEmail("test@example.com");
 
-        testNotification = new Notification();
+        testNotification = new Notificacion();
         testNotification.setId(1L);
         testNotification.setUsuario(testUser);
-        testNotification.setType(NotificationType.BOOKING_APPROVED);
-        testNotification.setTitle("Test Notification");
+        testNotification.setType(TipoNotificacion.BOOKING_APPROVED);
+        testNotification.setTitle("Test Notificacion");
         testNotification.setMessage("This is a test notification");
         testNotification.setIsRead(false);
-        testNotification.setPriority(NotificationPriority.NORMAL);
+        testNotification.setPriority(PrioridadNotificacion.NORMAL);
     }
 
     @Test
     void testCrearNotificacion_WithoutEmail() {
-        when(notificationRepository.save(any(Notification.class))).thenReturn(testNotification);
+        when(notificationRepository.save(any(Notificacion.class))).thenReturn(testNotification);
 
-        Notification result = notificationService.crearNotificacion(
+        Notificacion result = notificationService.crearNotificacion(
             testUser,
-            NotificationType.BOOKING_APPROVED,
+            TipoNotificacion.BOOKING_APPROVED,
             "Test Title",
             "Test Message",
             "/test",
-            NotificationPriority.NORMAL,
+            PrioridadNotificacion.NORMAL,
             false
         );
 
         assertThat(result).isNotNull();
         assertThat(result.getUsuario()).isEqualTo(testUser);
-        assertThat(result.getType()).isEqualTo(NotificationType.BOOKING_APPROVED);
-        verify(notificationRepository, times(1)).save(any(Notification.class));
+        assertThat(result.getType()).isEqualTo(TipoNotificacion.BOOKING_APPROVED);
+        verify(notificationRepository, times(1)).save(any(Notificacion.class));
         verify(emailService, never()).sendEmail(anyString(), anyString(), anyString());
     }
 
     @Test
     void testCrearNotificacion_WithEmail() {
-        when(notificationRepository.save(any(Notification.class))).thenReturn(testNotification);
+        when(notificationRepository.save(any(Notificacion.class))).thenReturn(testNotification);
         doNothing().when(emailService).sendEmail(anyString(), anyString(), anyString());
 
-        Notification result = notificationService.crearNotificacion(
+        Notificacion result = notificationService.crearNotificacion(
             testUser,
-            NotificationType.BOOKING_APPROVED,
+            TipoNotificacion.BOOKING_APPROVED,
             "Test Title",
             "Test Message",
             "/test",
-            NotificationPriority.HIGH,
+            PrioridadNotificacion.HIGH,
             true
         );
 
         assertThat(result).isNotNull();
         // Se llama save 2 veces: al crear y al marcar emailSent
-        verify(notificationRepository, times(2)).save(any(Notification.class));
+        verify(notificationRepository, times(2)).save(any(Notificacion.class));
         verify(emailService, times(1)).sendEmail(
             eq(testUser.getEmail()),
             anyString(),
@@ -101,7 +101,7 @@ class NotificationServiceTest {
 
     @Test
     void testGetNotificacionesNoLeidas() {
-        Notification notification2 = new Notification();
+        Notificacion notification2 = new Notificacion();
         notification2.setId(2L);
         notification2.setUsuario(testUser);
         notification2.setIsRead(false);
@@ -109,7 +109,7 @@ class NotificationServiceTest {
         when(notificationRepository.findByUsuarioIdAndIsReadFalseOrderByCreatedAtDesc(1L))
             .thenReturn(Arrays.asList(testNotification, notification2));
 
-        List<Notification> result = notificationService.getNotificacionesNoLeidas(1L);
+        List<Notificacion> result = notificationService.getNotificacionesNoLeidas(1L);
 
         assertThat(result).hasSize(2);
         assertThat(result).contains(testNotification, notification2);
@@ -130,7 +130,7 @@ class NotificationServiceTest {
     @Test
     void testMarcarComoLeida() {
         when(notificationRepository.findById(1L)).thenReturn(Optional.of(testNotification));
-        when(notificationRepository.save(any(Notification.class))).thenReturn(testNotification);
+        when(notificationRepository.save(any(Notificacion.class))).thenReturn(testNotification);
 
         notificationService.marcarComoLeida(1L, 1L);
 
@@ -142,7 +142,7 @@ class NotificationServiceTest {
 
     @Test
     void testMarcarTodasComoLeidas() {
-        Notification notification2 = new Notification();
+        Notificacion notification2 = new Notificacion();
         notification2.setId(2L);
         notification2.setUsuario(testUser);
         notification2.setIsRead(false);
@@ -161,7 +161,7 @@ class NotificationServiceTest {
     @Test
     void testEliminarNotificacion() {
         when(notificationRepository.findById(1L)).thenReturn(Optional.of(testNotification));
-        doNothing().when(notificationRepository).delete(any(Notification.class));
+        doNothing().when(notificationRepository).delete(any(Notificacion.class));
 
         notificationService.eliminarNotificacion(1L, 1L);
 
@@ -171,7 +171,7 @@ class NotificationServiceTest {
 
     @Test
     void testGetTodasLasNotificaciones() {
-        Notification notification2 = new Notification();
+        Notificacion notification2 = new Notificacion();
         notification2.setId(2L);
         notification2.setUsuario(testUser);
         notification2.setIsRead(true);
@@ -179,7 +179,7 @@ class NotificationServiceTest {
         when(notificationRepository.findByUsuarioIdOrderByCreatedAtDesc(1L))
             .thenReturn(Arrays.asList(testNotification, notification2));
 
-        List<Notification> result = notificationService.getTodasLasNotificaciones(1L);
+        List<Notificacion> result = notificationService.getTodasLasNotificaciones(1L);
 
         assertThat(result).hasSize(2);
         verify(notificationRepository, times(1)).findByUsuarioIdOrderByCreatedAtDesc(1L);

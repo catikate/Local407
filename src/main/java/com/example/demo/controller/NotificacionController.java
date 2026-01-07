@@ -1,8 +1,8 @@
 package com.example.demo.controller;
 
-import com.example.demo.dto.NotificationResponse;
-import com.example.demo.model.Notification;
-import com.example.demo.service.NotificationService;
+import com.example.demo.dto.NotificacionResponse;
+import com.example.demo.model.Notificacion;
+import com.example.demo.service.NotificacionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,21 +16,21 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/api/notifications")
-public class NotificationController {
+public class NotificacionController {
 
     @Autowired
-    private NotificationService notificationService;
+    private NotificacionService notificationService;
 
     /**
      * Obtener notificaciones no leídas de un usuario
      * GET /api/notifications/usuario/{usuarioId}/unread
      */
     @GetMapping("/usuario/{usuarioId}/unread")
-    public ResponseEntity<List<NotificationResponse>> getUnread(@PathVariable Long usuarioId) {
-        List<Notification> notifications = notificationService.getNotificacionesNoLeidas(usuarioId);
+    public ResponseEntity<List<NotificacionResponse>> getUnread(@PathVariable Long usuarioId) {
+        List<Notificacion> notifications = notificationService.getNotificacionesNoLeidas(usuarioId);
 
-        List<NotificationResponse> response = notifications.stream()
-            .map(NotificationResponse::from)
+        List<NotificacionResponse> response = notifications.stream()
+            .map(NotificacionResponse::from)
             .collect(Collectors.toList());
 
         return ResponseEntity.ok(response);
@@ -41,11 +41,11 @@ public class NotificationController {
      * GET /api/notifications/usuario/{usuarioId}
      */
     @GetMapping("/usuario/{usuarioId}")
-    public ResponseEntity<List<NotificationResponse>> getAll(@PathVariable Long usuarioId) {
-        List<Notification> notifications = notificationService.getTodasLasNotificaciones(usuarioId);
+    public ResponseEntity<List<NotificacionResponse>> getAll(@PathVariable Long usuarioId) {
+        List<Notificacion> notifications = notificationService.getTodasLasNotificaciones(usuarioId);
 
-        List<NotificationResponse> response = notifications.stream()
-            .map(NotificationResponse::from)
+        List<NotificacionResponse> response = notifications.stream()
+            .map(NotificacionResponse::from)
             .collect(Collectors.toList());
 
         return ResponseEntity.ok(response);
@@ -102,7 +102,7 @@ public class NotificationController {
      * GET /api/notifications/{id}
      */
     @GetMapping("/{id}")
-    public ResponseEntity<NotificationResponse> getById(@PathVariable Long id) {
+    public ResponseEntity<NotificacionResponse> getById(@PathVariable Long id) {
         // Este endpoint podría implementarse si es necesario
         // Por ahora devolvemos not implemented
         return ResponseEntity.status(501).build();
