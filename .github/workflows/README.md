@@ -79,12 +79,12 @@ El workflow de CI se ejecuta automáticamente en:
 # Construir imagen
 docker build -t local407:latest .
 
-# Ejecutar contenedor
+# Ejecutar contenedor (requiere .env con credenciales)
 docker run -p 8080:8080 \
   -e SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/mydatabase \
-  -e SPRING_DATASOURCE_USERNAME=myuser \
-  -e SPRING_DATASOURCE_PASSWORD=secret \
-  -e JWT_SECRET=your-secret-key \
+  -e SPRING_DATASOURCE_USERNAME=${MYSQL_USER} \
+  -e SPRING_DATASOURCE_PASSWORD=${MYSQL_PASSWORD} \
+  -e JWT_SECRET=${JWT_SECRET} \
   local407:latest
 ```
 
@@ -120,13 +120,3 @@ El workflow incluye varias optimizaciones:
 - ⚡ **Docker Cache**: Usa GitHub Actions cache para layers
 - ⚡ **Parallel Jobs**: code-quality corre en paralelo con docker-build
 - ⚡ **Conditional Jobs**: Docker solo se construye en push a main
-
-## Próximos Pasos
-
-Posibles mejoras futuras:
-- [ ] Integrar SonarQube para análisis de código
-- [ ] Deploy automático a Cloud (AWS, Azure, GCP)
-- [ ] Notificaciones a Slack/Discord
-- [ ] Tests de integración E2E
-- [ ] Security scanning con Snyk/Trivy
-- [ ] Performance testing

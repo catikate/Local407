@@ -57,3 +57,5 @@ logs/
 # Database
 *.db
 *.sqlite
+PROXIMOS_PASOS.txt
+frontend/.env
