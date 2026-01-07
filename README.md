@@ -78,19 +78,12 @@ src/test/java/
 # 1. Start MySQL
 docker-compose up -d
 
-# 2. Configure application.properties
-spring.datasource.url=jdbc:mysql://localhost:3306/mydatabase
-spring.datasource.username=myuser
-spring.datasource.password=secret
-jwt.secret=YOUR_SECRET_KEY_MINIMUM_256_BITS
+# 2. Create .env file from example
+cp .env.example .env
+# Then edit .env with your actual credentials
 
-# Mail configuration (optional)
-spring.mail.host=smtp.gmail.com
-spring.mail.port=587
-spring.mail.username=your-email@gmail.com
-spring.mail.password=your-app-password
-spring.mail.properties.mail.smtp.auth=true
-spring.mail.properties.mail.smtp.starttls.enable=true
+# Or configure environment variables directly:
+# MYSQL_USER, MYSQL_PASSWORD, JWT_SECRET, MAIL_USERNAME, MAIL_PASSWORD
 
 # 3. Run application
 ./gradlew bootRun
@@ -339,13 +332,15 @@ The system includes a comprehensive notification system with the following featu
 # Local build
 docker build -t local407:latest .
 
-# Run with MySQL
+# Run with MySQL (requires .env file with credentials)
 docker compose up -d
+
+# Or run container manually with environment variables
 docker run -p 8080:8080 \
   -e SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/mydatabase \
-  -e SPRING_DATASOURCE_USERNAME=myuser \
-  -e SPRING_DATASOURCE_PASSWORD=secret \
-  -e JWT_SECRET=your_secret_key_here \
+  -e SPRING_DATASOURCE_USERNAME=${MYSQL_USER} \
+  -e SPRING_DATASOURCE_PASSWORD=${MYSQL_PASSWORD} \
+  -e JWT_SECRET=${JWT_SECRET} \
   local407:latest
 ```
 
