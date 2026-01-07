@@ -192,7 +192,7 @@ function NotificationBell() {
 
           {notifications.length > 0 && (
             <div className="notification-footer">
-              <a href="/notificaciones">Ver todas las notificaciones</a>
+              <a href="/notifications">Ver todas las notificaciones</a>
             </div>
           )}
         </div>

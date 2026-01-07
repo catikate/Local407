@@ -3,7 +3,7 @@ package com.example.demo.model;
 /**
  * Tipos de notificaciones del sistema
  */
-public enum NotificationType {
+public enum TipoNotificacion {
     // Recordatorios
     PAYMENT_REMINDER,           // Recordatorio de pago
     REHEARSAL_REMINDER,         // Recordatorio de ensayo

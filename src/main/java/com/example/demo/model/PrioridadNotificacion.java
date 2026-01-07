@@ -3,7 +3,7 @@ package com.example.demo.model;
 /**
  * Prioridad de las notificaciones
  */
-public enum NotificationPriority {
+public enum PrioridadNotificacion {
     LOW,      // Informativo
     NORMAL,   // Normal
     HIGH,     // Importante

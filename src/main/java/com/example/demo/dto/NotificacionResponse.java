@@ -1,34 +1,34 @@
 package com.example.demo.dto;
 
-import com.example.demo.model.Notification;
-import com.example.demo.model.NotificationPriority;
-import com.example.demo.model.NotificationType;
+import com.example.demo.model.Notificacion;
+import com.example.demo.model.PrioridadNotificacion;
+import com.example.demo.model.TipoNotificacion;
 
 import java.time.LocalDateTime;
 
 /**
  * DTO para respuestas de notificaciones
  */
-public class NotificationResponse {
+public class NotificacionResponse {
 
     private Long id;
     private Long usuarioId;
-    private NotificationType type;
+    private TipoNotificacion type;
     private String title;
     private String message;
     private Boolean isRead;
     private Boolean emailSent;
     private String metadata;
     private String actionUrl;
-    private NotificationPriority priority;
+    private PrioridadNotificacion priority;
     private LocalDateTime createdAt;
     private LocalDateTime readAt;
 
-    public NotificationResponse() {}
+    public NotificacionResponse() {}
 
-    public NotificationResponse(Long id, Long usuarioId, NotificationType type, String title,
+    public NotificacionResponse(Long id, Long usuarioId, TipoNotificacion type, String title,
                                 String message, Boolean isRead, Boolean emailSent, String metadata,
-                                String actionUrl, NotificationPriority priority,
+                                String actionUrl, PrioridadNotificacion priority,
                                 LocalDateTime createdAt, LocalDateTime readAt) {
         this.id = id;
         this.usuarioId = usuarioId;
@@ -45,10 +45,10 @@ public class NotificationResponse {
     }
 
     /**
-     * Crear desde entidad Notification
+     * Crear desde entidad Notificacion
      */
-    public static NotificationResponse from(Notification notification) {
-        return new NotificationResponse(
+    public static NotificacionResponse from(Notificacion notification) {
+        return new NotificacionResponse(
             notification.getId(),
             notification.getUsuario().getId(),
             notification.getType(),
@@ -82,11 +82,11 @@ public class NotificationResponse {
         this.usuarioId = usuarioId;
     }
 
-    public NotificationType getType() {
+    public TipoNotificacion getType() {
         return type;
     }
 
-    public void setType(NotificationType type) {
+    public void setType(TipoNotificacion type) {
         this.type = type;
     }
 
@@ -138,11 +138,11 @@ public class NotificationResponse {
         this.actionUrl = actionUrl;
     }
 
-    public NotificationPriority getPriority() {
+    public PrioridadNotificacion getPriority() {
         return priority;
     }
 
-    public void setPriority(NotificationPriority priority) {
+    public void setPriority(PrioridadNotificacion priority) {
         this.priority = priority;
     }
 

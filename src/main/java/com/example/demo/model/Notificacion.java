@@ -8,9 +8,9 @@ import java.time.LocalDateTime;
  * Entidad para gestionar notificaciones del sistema
  */
 @Entity
-@Table(name = "notifications")
+@Table(name = "notificacion")
 @JsonIgnoreProperties({"usuario"})
-public class Notification {
+public class Notificacion {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,7 +24,7 @@ public class Notification {
     // Tipo de notificación
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private NotificationType type;
+    private TipoNotificacion type;
 
     // Título y mensaje
     @Column(nullable = false)
@@ -50,7 +50,7 @@ public class Notification {
 
     // Prioridad
     @Enumerated(EnumType.STRING)
-    private NotificationPriority priority = NotificationPriority.NORMAL;
+    private PrioridadNotificacion priority = PrioridadNotificacion.NORMAL;
 
     // Auditoría
     @Column(nullable = false, updatable = false)
@@ -64,9 +64,9 @@ public class Notification {
     }
 
     // Constructores
-    public Notification() {}
+    public Notificacion() {}
 
-    public Notification(Usuario usuario, NotificationType type, String title, String message) {
+    public Notificacion(Usuario usuario, TipoNotificacion type, String title, String message) {
         this.usuario = usuario;
         this.type = type;
         this.title = title;
@@ -91,11 +91,11 @@ public class Notification {
         this.usuario = usuario;
     }
 
-    public NotificationType getType() {
+    public TipoNotificacion getType() {
         return type;
     }
 
-    public void setType(NotificationType type) {
+    public void setType(TipoNotificacion type) {
         this.type = type;
     }
 
@@ -147,11 +147,11 @@ public class Notification {
         this.actionUrl = actionUrl;
     }
 
-    public NotificationPriority getPriority() {
+    public PrioridadNotificacion getPriority() {
         return priority;
     }
 
-    public void setPriority(NotificationPriority priority) {
+    public void setPriority(PrioridadNotificacion priority) {
         this.priority = priority;
     }
 

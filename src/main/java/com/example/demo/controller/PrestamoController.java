@@ -81,7 +81,8 @@ public class PrestamoController {
         return prestamoService.findById(id)
                 .map(existingPrestamo -> {
                     prestamo.setId(id);
-                    return ResponseEntity.ok(prestamoService.save(prestamo));
+                    Prestamo updated = prestamoService.actualizarPrestamo(existingPrestamo, prestamo);
+                    return ResponseEntity.ok(updated);
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
