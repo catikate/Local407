@@ -381,13 +381,3 @@ See more details in [.github/workflows/README.md](.github/workflows/README.md)
 ✅ Unit & Integration Tests
 ✅ CI/CD Pipeline
 ✅ Docker Support
-
-## Future Enhancements
-
-- WebSocket real-time notifications
-- Payment integration for space rentals
-- Equipment maintenance tracking
-- Advanced calendar features (recurring events)
-- User roles and permissions (admin, member, guest)
-- File uploads for band photos and equipment images
-- Analytics dashboard
