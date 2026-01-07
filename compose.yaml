@@ -2,10 +2,10 @@ services:
   mysql:
     image: 'mysql:latest'
     environment:
-      - 'MYSQL_DATABASE=mydatabase'
-      - 'MYSQL_PASSWORD=secret'
-      - 'MYSQL_ROOT_PASSWORD=verysecret'
-      - 'MYSQL_USER=myuser'
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-mydatabase}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_USER=${MYSQL_USER:-myuser}
     ports:
       - '3306:3306'
     volumes:
@@ -16,8 +16,8 @@ services:
     environment:
       - PMA_HOST=mysql
       - PMA_PORT=3306
-      - PMA_USER=myuser
-      - PMA_PASSWORD=secret
+      - PMA_USER=${MYSQL_USER:-myuser}
+      - PMA_PASSWORD=${MYSQL_PASSWORD}
     ports:
       - '8081:80'
     depends_on:
