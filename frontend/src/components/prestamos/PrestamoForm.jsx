@@ -1,62 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Button,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Grid,
-  Box,
-  CircularProgress,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
-  FormLabel,
-  Alert,
-} from '@mui/material';
 import { useAuth } from '../../hooks/useAuth';
 import itemService from '../../services/itemService';
 import localService from '../../services/localService';
 import bandaService from '../../services/bandaService';
 import usuarioService from '../../services/usuarioService';
 import prestamoService from '../../services/prestamoService';
-
-// Schema de validación
-const prestamoSchema = yup.object({
-  itemId: yup
-    .number()
-    .required('Debes seleccionar un item')
-    .typeError('Debes seleccionar un item'),
-  receptorTipo: yup
-    .string()
-    .required('Debes seleccionar el tipo de receptor')
-    .oneOf(['usuario', 'banda']),
-  receptorId: yup
-    .mixed()
-    .when('receptorTipo', {
-      is: (val) => !!val,
-      then: (schema) => schema.required('Debes seleccionar un receptor').test('is-number', 'Debes seleccionar un receptor', value => typeof value === 'number'),
-      otherwise: (schema) => schema.nullable().notRequired(),
-    }),
-  localDestinoId: yup
-    .number()
-    .required('Debes seleccionar un local destino')
-    .typeError('Debes seleccionar un local destino'),
-  fechaDevolucionEsperada: yup
-    .string()
-    .required('Debes especificar la fecha de devolución'),
-  notas: yup
-    .string()
-    .max(500, 'Máximo 500 caracteres'),
-});
+import { Button } from '../ui';
+import { X, Package, User, Users, MapPin, Calendar, FileText } from 'lucide-react';
 
 const PrestamoForm = ({ open, onClose }) => {
   const { user } = useAuth();
@@ -65,70 +15,64 @@ const PrestamoForm = ({ open, onClose }) => {
   const [bandas, setBandas] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [loadingData, setLoadingData] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState('');
 
-  const {
-    control,
-    handleSubmit,
-    reset,
-    watch,
-    setValue,
-    formState: { errors },
-  } = useForm({
-    resolver: yupResolver(prestamoSchema),
-    defaultValues: {
-      itemId: '',
-      receptorTipo: 'usuario',
-      receptorId: '',
-      localDestinoId: '',
-      fechaDevolucionEsperada: '',
-      notas: '',
-    },
+  // Form state
+  const [formData, setFormData] = useState({
+    itemId: '',
+    receptorTipo: 'usuario',
+    receptorId: '',
+    localDestinoId: '',
+    fechaDevolucionEsperada: '',
+    notas: '',
   });
 
-  const receptorTipo = watch('receptorTipo');
-  const itemId = watch('itemId');
+  const [errors, setErrors] = useState({});
 
-  // Cargar datos cuando se abre el formulario
+  // Load data when form opens
   useEffect(() => {
     if (open) {
       loadData();
     }
   }, [open]);
 
-  // Cuando se selecciona un item, autocompletar local origen y destino
+  // Auto-fill destination when item is selected
   useEffect(() => {
-    if (itemId && items.length > 0) {
-      const selectedItem = items.find(i => i.id === itemId);
+    if (formData.itemId && items.length > 0) {
+      const selectedItem = items.find(i => i.id === parseInt(formData.itemId));
       if (selectedItem?.localActual?.id) {
-        setValue('localDestinoId', selectedItem.localActual.id);
+        setFormData(prev => ({ ...prev, localDestinoId: selectedItem.localActual.id.toString() }));
       }
     }
-  }, [itemId, items, setValue]);
+  }, [formData.itemId, items]);
+
+  // Reset receptor when type changes
+  useEffect(() => {
+    setFormData(prev => ({ ...prev, receptorId: '' }));
+  }, [formData.receptorTipo]);
 
   const loadData = async () => {
     try {
       setLoadingData(true);
+      setError('');
 
-      // Cargar items del usuario que no estén prestados
+      // Load user's items that are not currently loaned
       const allItems = await itemService.getByUsuario(user.id);
-      // Filtrar items disponibles (no prestados actualmente)
       const availableItems = allItems.filter(item => {
-        // El item está disponible si está en su local original
         return item.localActual?.id === item.localOriginal?.id;
       });
       setItems(availableItems);
 
-      // Cargar locales
+      // Load locales
       const localesData = await localService.getAll();
       setLocales(localesData.data || []);
 
-      // Cargar bandas
+      // Load bandas
       const bandasData = await bandaService.getAll();
       setBandas(bandasData.data || []);
 
-      // Cargar usuarios (para prestar a otros usuarios)
+      // Load usuarios (exclude current user)
       const usuariosData = await usuarioService.getAll();
       const otrosUsuarios = usuariosData.data?.filter(u => u.id !== user.id) || [];
       setUsuarios(otrosUsuarios);
@@ -140,34 +84,59 @@ const PrestamoForm = ({ open, onClose }) => {
     }
   };
 
-  const handleFormSubmit = async (data) => {
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.itemId) {
+      newErrors.itemId = 'Debes seleccionar un item';
+    }
+
+    if (!formData.receptorId) {
+      newErrors.receptorId = 'Debes seleccionar un receptor';
+    }
+
+    if (!formData.localDestinoId) {
+      newErrors.localDestinoId = 'Debes seleccionar un local destino';
+    }
+
+    if (!formData.fechaDevolucionEsperada) {
+      newErrors.fechaDevolucionEsperada = 'Debes especificar la fecha de devolución';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) return;
+
     try {
       setLoading(true);
       setError('');
 
-      const selectedItem = items.find(i => i.id === data.itemId);
+      const selectedItem = items.find(i => i.id === parseInt(formData.itemId));
 
-      // Preparar datos del préstamo
       const prestamoData = {
-        item: { id: data.itemId },
+        item: { id: parseInt(formData.itemId) },
         prestadoPor: { id: user.id },
         localOrigen: { id: selectedItem.localOriginal.id },
-        localDestino: { id: data.localDestinoId },
-        fechaDevolucionEsperada: data.fechaDevolucionEsperada,
-        notas: data.notas || null,
+        localDestino: { id: parseInt(formData.localDestinoId) },
+        fechaDevolucionEsperada: formData.fechaDevolucionEsperada,
+        notas: formData.notas || null,
       };
 
-      // Agregar receptor según el tipo seleccionado
-      if (data.receptorTipo === 'usuario') {
-        prestamoData.prestadoAUsuario = { id: data.receptorId };
+      if (formData.receptorTipo === 'usuario') {
+        prestamoData.prestadoAUsuario = { id: parseInt(formData.receptorId) };
         prestamoData.prestadoABanda = null;
       } else {
-        prestamoData.prestadoABanda = { id: data.receptorId };
+        prestamoData.prestadoABanda = { id: parseInt(formData.receptorId) };
         prestamoData.prestadoAUsuario = null;
       }
 
       await prestamoService.create(prestamoData);
-      onClose();
+      onClose(true);
     } catch (err) {
       setError(err.response?.data || 'Error al crear el préstamo');
       console.error('Error creating prestamo:', err);
@@ -177,235 +146,276 @@ const PrestamoForm = ({ open, onClose }) => {
   };
 
   const handleClose = () => {
-    reset();
+    setFormData({
+      itemId: '',
+      receptorTipo: 'usuario',
+      receptorId: '',
+      localDestinoId: '',
+      fechaDevolucionEsperada: '',
+      notas: '',
+    });
+    setErrors({});
     setError('');
-    onClose();
+    onClose(false);
   };
 
-  // Obtener el local origen del item seleccionado
+  const handleChange = (field) => (e) => {
+    setFormData(prev => ({ ...prev, [field]: e.target.value }));
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
   const getLocalOrigen = () => {
-    if (!itemId || items.length === 0) return null;
-    const selectedItem = items.find(i => i.id === itemId);
+    if (!formData.itemId || items.length === 0) return null;
+    const selectedItem = items.find(i => i.id === parseInt(formData.itemId));
     return selectedItem?.localOriginal;
   };
 
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>Nuevo Préstamo</DialogTitle>
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/50 transition-opacity"
+        onClick={handleClose}
+      />
 
-      <form onSubmit={handleSubmit(handleFormSubmit)}>
-        <DialogContent>
+      {/* Modal */}
+      <div className="flex min-h-full items-center justify-center p-4">
+        <div className="relative w-full max-w-2xl bg-card-bg rounded-xl shadow-xl transform transition-all animate-fade-in">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-border">
+            <h2 className="text-xl font-semibold text-text-primary">Nuevo Préstamo</h2>
+            <button
+              onClick={handleClose}
+              className="p-2 hover:bg-secondary rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5 text-text-secondary" />
+            </button>
+          </div>
+
+          {/* Content */}
           {loadingData ? (
-            <Box display="flex" justifyContent="center" p={3}>
-              <CircularProgress />
-            </Box>
+            <div className="flex items-center justify-center p-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+            </div>
           ) : (
-            <Box sx={{ pt: 1 }}>
-              {error && (
-                <Alert severity="error" sx={{ mb: 2 }}>
-                  {error}
-                </Alert>
-              )}
+            <form onSubmit={handleSubmit}>
+              <div className="p-6 space-y-6">
+                {error && (
+                  <div className="p-4 bg-error/10 border border-error/20 rounded-lg text-error text-sm">
+                    {error}
+                  </div>
+                )}
 
-              <Grid container spacing={2}>
-                {/* Selector de item */}
-                <Grid item xs={12}>
-                  <Controller
-                    name="itemId"
-                    control={control}
-                    render={({ field }) => (
-                      <FormControl fullWidth required error={!!errors.itemId}>
-                        <InputLabel>Item a Prestar</InputLabel>
-                        <Select
-                          {...field}
-                          label="Item a Prestar"
-                        >
-                          {items.length === 0 ? (
-                            <MenuItem disabled>
-                              No tienes items disponibles para prestar
-                            </MenuItem>
-                          ) : (
-                            items.map((item) => (
-                              <MenuItem key={item.id} value={item.id}>
-                                {item.descripcion} - {item.localActual?.nombre}
-                              </MenuItem>
-                            ))
-                          )}
-                        </Select>
-                        {errors.itemId && (
-                          <Box component="span" sx={{ color: 'error.main', fontSize: '0.75rem', mt: 0.5, ml: 2 }}>
-                            {errors.itemId.message}
-                          </Box>
-                        )}
-                      </FormControl>
+                {/* Item selector */}
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-text-primary mb-2">
+                    <Package className="w-4 h-4" />
+                    Item a Prestar *
+                  </label>
+                  <select
+                    value={formData.itemId}
+                    onChange={handleChange('itemId')}
+                    className={`w-full px-3 py-2 border rounded-lg bg-card-bg text-text-primary transition-colors focus-ring ${errors.itemId ? 'border-error' : 'border-border'}`}
+                  >
+                    <option value="">Selecciona un item</option>
+                    {items.length === 0 ? (
+                      <option disabled>No tienes items disponibles</option>
+                    ) : (
+                      items.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.descripcion} - {item.localActual?.nombre}
+                        </option>
+                      ))
                     )}
-                  />
-                </Grid>
+                  </select>
+                  {errors.itemId && (
+                    <p className="mt-1 text-sm text-error">{errors.itemId}</p>
+                  )}
+                </div>
 
-                {/* Tipo de receptor */}
-                <Grid item xs={12}>
-                  <Controller
-                    name="receptorTipo"
-                    control={control}
-                    render={({ field }) => (
-                      <FormControl component="fieldset">
-                        <FormLabel component="legend">Prestar a *</FormLabel>
-                        <RadioGroup {...field} row>
-                          <FormControlLabel value="usuario" control={<Radio />} label="Usuario" />
-                          <FormControlLabel value="banda" control={<Radio />} label="Banda" />
-                        </RadioGroup>
-                      </FormControl>
-                    )}
-                  />
-                </Grid>
-
-                {/* Selector de receptor */}
-                <Grid item xs={12}>
-                  <Controller
-                    name="receptorId"
-                    control={control}
-                    render={({ field }) => (
-                      <FormControl fullWidth required error={!!errors.receptorId}>
-                        <InputLabel>
-                          {receptorTipo === 'usuario' ? 'Usuario' : 'Banda'}
-                        </InputLabel>
-                        <Select
-                          {...field}
-                          label={receptorTipo === 'usuario' ? 'Usuario' : 'Banda'}
-                        >
-                          {receptorTipo === 'usuario' ? (
-                            usuarios.length === 0 ? (
-                              <MenuItem disabled>No hay usuarios disponibles</MenuItem>
-                            ) : (
-                              usuarios.map((usuario) => (
-                                <MenuItem key={usuario.id} value={usuario.id}>
-                                  {usuario.nombre} {usuario.apellido} ({usuario.email})
-                                </MenuItem>
-                              ))
-                            )
-                          ) : (
-                            bandas.length === 0 ? (
-                              <MenuItem disabled>No hay bandas disponibles</MenuItem>
-                            ) : (
-                              bandas.map((banda) => (
-                                <MenuItem key={banda.id} value={banda.id}>
-                                  {banda.nombre} - {banda.local?.nombre}
-                                </MenuItem>
-                              ))
-                            )
-                          )}
-                        </Select>
-                        {errors.receptorId && (
-                          <Box component="span" sx={{ color: 'error.main', fontSize: '0.75rem', mt: 0.5, ml: 2 }}>
-                            {errors.receptorId.message}
-                          </Box>
-                        )}
-                      </FormControl>
-                    )}
-                  />
-                </Grid>
-
-                {/* Local origen (solo lectura) */}
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    label="Local Origen"
-                    value={getLocalOrigen()?.nombre || 'Selecciona un item'}
-                    fullWidth
-                    disabled
-                    helperText="Automático según el item"
-                  />
-                </Grid>
-
-                {/* Local destino */}
-                <Grid item xs={12} sm={6}>
-                  <Controller
-                    name="localDestinoId"
-                    control={control}
-                    render={({ field }) => (
-                      <FormControl fullWidth required error={!!errors.localDestinoId}>
-                        <InputLabel>Local Destino</InputLabel>
-                        <Select
-                          {...field}
-                          label="Local Destino"
-                        >
-                          {locales.length === 0 ? (
-                            <MenuItem disabled>No hay locales disponibles</MenuItem>
-                          ) : (
-                            locales.map((local) => (
-                              <MenuItem key={local.id} value={local.id}>
-                                {local.nombre}
-                              </MenuItem>
-                            ))
-                          )}
-                        </Select>
-                        {errors.localDestinoId && (
-                          <Box component="span" sx={{ color: 'error.main', fontSize: '0.75rem', mt: 0.5, ml: 2 }}>
-                            {errors.localDestinoId.message}
-                          </Box>
-                        )}
-                      </FormControl>
-                    )}
-                  />
-                </Grid>
-
-                {/* Fecha devolución esperada */}
-                <Grid item xs={12}>
-                  <Controller
-                    name="fechaDevolucionEsperada"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        label="Fecha Devolución Esperada"
-                        type="datetime-local"
-                        fullWidth
-                        required
-                        error={!!errors.fechaDevolucionEsperada}
-                        helperText={errors.fechaDevolucionEsperada?.message}
-                        InputLabelProps={{ shrink: true }}
+                {/* Receptor type */}
+                <div>
+                  <label className="text-sm font-medium text-text-primary mb-2 block">
+                    Prestar a *
+                  </label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="receptorTipo"
+                        value="usuario"
+                        checked={formData.receptorTipo === 'usuario'}
+                        onChange={handleChange('receptorTipo')}
+                        className="w-4 h-4 text-accent focus:ring-accent"
                       />
-                    )}
-                  />
-                </Grid>
-
-                {/* Notas */}
-                <Grid item xs={12}>
-                  <Controller
-                    name="notas"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        label="Notas"
-                        fullWidth
-                        multiline
-                        rows={3}
-                        error={!!errors.notas}
-                        helperText={errors.notas?.message}
-                        placeholder="Notas opcionales sobre el préstamo"
+                      <User className="w-4 h-4 text-text-secondary" />
+                      <span className="text-text-primary">Usuario</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="receptorTipo"
+                        value="banda"
+                        checked={formData.receptorTipo === 'banda'}
+                        onChange={handleChange('receptorTipo')}
+                        className="w-4 h-4 text-accent focus:ring-accent"
                       />
+                      <Users className="w-4 h-4 text-text-secondary" />
+                      <span className="text-text-primary">Banda</span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Receptor selector */}
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-text-primary mb-2">
+                    {formData.receptorTipo === 'usuario' ? (
+                      <><User className="w-4 h-4" /> Usuario *</>
+                    ) : (
+                      <><Users className="w-4 h-4" /> Banda *</>
                     )}
+                  </label>
+                  <select
+                    value={formData.receptorId}
+                    onChange={handleChange('receptorId')}
+                    className={`w-full px-3 py-2 border rounded-lg bg-card-bg text-text-primary transition-colors focus-ring ${errors.receptorId ? 'border-error' : 'border-border'}`}
+                  >
+                    <option value="">
+                      Selecciona {formData.receptorTipo === 'usuario' ? 'un usuario' : 'una banda'}
+                    </option>
+                    {formData.receptorTipo === 'usuario' ? (
+                      usuarios.length === 0 ? (
+                        <option disabled>No hay usuarios disponibles</option>
+                      ) : (
+                        usuarios.map((usuario) => (
+                          <option key={usuario.id} value={usuario.id}>
+                            {usuario.nombre} {usuario.apellido} ({usuario.email})
+                          </option>
+                        ))
+                      )
+                    ) : (
+                      bandas.length === 0 ? (
+                        <option disabled>No hay bandas disponibles</option>
+                      ) : (
+                        bandas.map((banda) => (
+                          <option key={banda.id} value={banda.id}>
+                            {banda.nombre} - {banda.local?.nombre}
+                          </option>
+                        ))
+                      )
+                    )}
+                  </select>
+                  {errors.receptorId && (
+                    <p className="mt-1 text-sm text-error">{errors.receptorId}</p>
+                  )}
+                </div>
+
+                {/* Locales */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Local origen (read-only) */}
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-medium text-text-primary mb-2">
+                      <MapPin className="w-4 h-4" />
+                      Local Origen
+                    </label>
+                    <input
+                      type="text"
+                      value={getLocalOrigen()?.nombre || 'Selecciona un item'}
+                      disabled
+                      className="w-full px-3 py-2 border border-border rounded-lg bg-secondary text-text-secondary cursor-not-allowed"
+                    />
+                    <p className="mt-1 text-xs text-text-muted">Automático según el item</p>
+                  </div>
+
+                  {/* Local destino */}
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-medium text-text-primary mb-2">
+                      <MapPin className="w-4 h-4" />
+                      Local Destino *
+                    </label>
+                    <select
+                      value={formData.localDestinoId}
+                      onChange={handleChange('localDestinoId')}
+                      className={`w-full px-3 py-2 border rounded-lg bg-card-bg text-text-primary transition-colors focus-ring ${errors.localDestinoId ? 'border-error' : 'border-border'}`}
+                    >
+                      <option value="">Selecciona un local</option>
+                      {locales.map((local) => (
+                        <option key={local.id} value={local.id}>
+                          {local.nombre}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.localDestinoId && (
+                      <p className="mt-1 text-sm text-error">{errors.localDestinoId}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Expected return date */}
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-text-primary mb-2">
+                    <Calendar className="w-4 h-4" />
+                    Fecha Devolución Esperada *
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={formData.fechaDevolucionEsperada}
+                    onChange={handleChange('fechaDevolucionEsperada')}
+                    className={`w-full px-3 py-2 border rounded-lg bg-card-bg text-text-primary transition-colors focus-ring ${errors.fechaDevolucionEsperada ? 'border-error' : 'border-border'}`}
                   />
-                </Grid>
-              </Grid>
-            </Box>
+                  {errors.fechaDevolucionEsperada && (
+                    <p className="mt-1 text-sm text-error">{errors.fechaDevolucionEsperada}</p>
+                  )}
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-text-primary mb-2">
+                    <FileText className="w-4 h-4" />
+                    Notas (opcional)
+                  </label>
+                  <textarea
+                    value={formData.notas}
+                    onChange={handleChange('notas')}
+                    placeholder="Notas adicionales sobre el préstamo..."
+                    rows={3}
+                    maxLength={500}
+                    className="w-full px-3 py-2 border border-border rounded-lg bg-card-bg text-text-primary placeholder-text-muted transition-colors focus-ring resize-none"
+                  />
+                  <p className="mt-1 text-xs text-text-muted text-right">
+                    {formData.notas.length}/500
+                  </p>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex items-center justify-end gap-3 p-6 border-t border-border">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleClose}
+                  disabled={loading}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  loading={loading}
+                  disabled={items.length === 0}
+                >
+                  Crear Préstamo
+                </Button>
+              </div>
+            </form>
           )}
-        </DialogContent>
-
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={handleClose} disabled={loading || loadingData}>
-            Cancelar
-          </Button>
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={loading || loadingData || items.length === 0}
-          >
-            {loading ? 'Creando...' : 'Crear Préstamo'}
-          </Button>
-        </DialogActions>
-      </form>
-    </Dialog>
+        </div>
+      </div>
+    </div>
   );
 };
 

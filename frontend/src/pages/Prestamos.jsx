@@ -1,28 +1,8 @@
 import { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Chip,
-  CircularProgress,
-  Alert,
-  Tabs,
-  Tab,
-} from '@mui/material';
-import {
-  Add as AddIcon,
-  SwapHoriz as SwapHorizIcon,
-  CheckCircle as CheckCircleIcon,
-} from '@mui/icons-material';
 import { useAuth } from '../hooks/useAuth';
 import prestamoService from '../services/prestamoService';
+import { Button, Card, Badge } from '../components/ui';
+import { Plus, ArrowRight, CheckCircle, Trash2, Package, RefreshCw } from 'lucide-react';
 import PrestamoForm from '../components/prestamos/PrestamoForm';
 
 const Prestamos = () => {
@@ -30,8 +10,10 @@ const Prestamos = () => {
   const [prestamos, setPrestamos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [openForm, setOpenForm] = useState(false);
-  const [tab, setTab] = useState(0);
+  const [tab, setTab] = useState('TODOS');
+  const [actionLoading, setActionLoading] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -44,10 +26,9 @@ const Prestamos = () => {
       setLoading(true);
       setError('');
 
-      // Cargar todos los préstamos
       const allPrestamos = await prestamoService.getAll();
 
-      // Filtrar préstamos relacionados con el usuario
+      // Filter loans related to the user
       const misPrestamos = allPrestamos.filter(p =>
         p.prestadoPor?.id === user.id ||
         p.prestadoAUsuario?.id === user.id ||
@@ -65,29 +46,45 @@ const Prestamos = () => {
 
   const handleDevolver = async (id) => {
     try {
+      setActionLoading(id);
+      setError('');
       await prestamoService.devolver(id);
+      setSuccess('Préstamo devuelto correctamente');
+      setTimeout(() => setSuccess(''), 3000);
       loadPrestamos();
     } catch (err) {
       setError(err.response?.data || 'Error al devolver el préstamo');
       console.error('Error returning prestamo:', err);
+    } finally {
+      setActionLoading(null);
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('¿Estás seguro de eliminar este préstamo?')) {
-      try {
-        await prestamoService.delete(id);
-        loadPrestamos();
-      } catch (err) {
-        setError('Error al eliminar el préstamo');
-        console.error('Error deleting prestamo:', err);
-      }
+    if (!window.confirm('¿Estás seguro de eliminar este préstamo?')) return;
+
+    try {
+      setActionLoading(id);
+      setError('');
+      await prestamoService.delete(id);
+      setSuccess('Préstamo eliminado correctamente');
+      setTimeout(() => setSuccess(''), 3000);
+      loadPrestamos();
+    } catch (err) {
+      setError('Error al eliminar el préstamo');
+      console.error('Error deleting prestamo:', err);
+    } finally {
+      setActionLoading(null);
     }
   };
 
-  const handleFormClose = () => {
+  const handleFormClose = (created = false) => {
     setOpenForm(false);
-    loadPrestamos();
+    if (created) {
+      setSuccess('Préstamo creado correctamente');
+      setTimeout(() => setSuccess(''), 3000);
+      loadPrestamos();
+    }
   };
 
   const formatDate = (dateString) => {
@@ -97,188 +94,303 @@ const Prestamos = () => {
       day: '2-digit',
       month: 'short',
       year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
     });
   };
 
-  const getEstadoColor = (estado) => {
+  const getEstadoBadge = (estado) => {
     switch (estado) {
       case 'ACTIVO':
-        return 'primary';
+        return <Badge variant="accent">Activo</Badge>;
       case 'DEVUELTO':
-        return 'success';
+        return <Badge variant="success">Devuelto</Badge>;
       case 'VENCIDO':
-        return 'error';
+        return <Badge variant="error">Vencido</Badge>;
       default:
-        return 'default';
+        return <Badge variant="neutral">{estado}</Badge>;
     }
   };
 
   const getFilteredPrestamos = () => {
-    if (tab === 0) return prestamos; // Todos
-    if (tab === 1) return prestamos.filter(p => p.prestadoPor?.id === user.id); // Prestados por mí
-    if (tab === 2) return prestamos.filter(p => p.prestadoAUsuario?.id === user.id ||
-      (p.prestadoABanda?.miembros && p.prestadoABanda.miembros.some(m => m.id === user.id))); // Recibidos
-    if (tab === 3) return prestamos.filter(p => p.estado === 'ACTIVO'); // Activos
-    return prestamos;
+    switch (tab) {
+      case 'PRESTADOS':
+        return prestamos.filter(p => p.prestadoPor?.id === user.id);
+      case 'RECIBIDOS':
+        return prestamos.filter(p =>
+          p.prestadoAUsuario?.id === user.id ||
+          (p.prestadoABanda?.miembros && p.prestadoABanda.miembros.some(m => m.id === user.id))
+        );
+      case 'ACTIVOS':
+        return prestamos.filter(p => p.estado === 'ACTIVO');
+      default:
+        return prestamos;
+    }
   };
 
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-      </Box>
-    );
-  }
+  const tabs = [
+    { id: 'TODOS', label: 'Todos', count: prestamos.length },
+    { id: 'PRESTADOS', label: 'Prestados por mí', count: prestamos.filter(p => p.prestadoPor?.id === user.id).length },
+    { id: 'RECIBIDOS', label: 'Recibidos', count: prestamos.filter(p => p.prestadoAUsuario?.id === user.id || (p.prestadoABanda?.miembros && p.prestadoABanda.miembros.some(m => m.id === user.id))).length },
+    { id: 'ACTIVOS', label: 'Activos', count: prestamos.filter(p => p.estado === 'ACTIVO').length },
+  ];
 
   const filteredPrestamos = getFilteredPrestamos();
 
-  return (
-    <Box>
-      {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" component="h1" fontWeight={600}>
-          Gestión de Préstamos
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setOpenForm(true)}
-        >
-          Nuevo Préstamo
-        </Button>
-      </Box>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+      </div>
+    );
+  }
 
+  return (
+    <div className="p-6 max-w-7xl mx-auto animate-fade-in">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-text-primary mb-2">Gestión de Préstamos</h1>
+          <p className="text-text-secondary">
+            Administra los préstamos de tu equipamiento
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            icon={RefreshCw}
+            onClick={loadPrestamos}
+          >
+            Actualizar
+          </Button>
+          <Button
+            variant="primary"
+            icon={Plus}
+            onClick={() => setOpenForm(true)}
+          >
+            Nuevo Préstamo
+          </Button>
+        </div>
+      </div>
+
+      {/* Alerts */}
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
-          {error}
-        </Alert>
+        <div className="mb-4 p-4 bg-error/10 border border-error/20 rounded-lg text-error flex items-center justify-between">
+          <span>{error}</span>
+          <button onClick={() => setError('')} className="text-error hover:text-error/80">
+            &times;
+          </button>
+        </div>
+      )}
+
+      {success && (
+        <div className="mb-4 p-4 bg-success/10 border border-success/20 rounded-lg text-success flex items-center justify-between">
+          <span>{success}</span>
+          <button onClick={() => setSuccess('')} className="text-success hover:text-success/80">
+            &times;
+          </button>
+        </div>
       )}
 
       {/* Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs value={tab} onChange={(e, newValue) => setTab(newValue)}>
-          <Tab label="Todos" />
-          <Tab label="Prestados por mí" />
-          <Tab label="Recibidos" />
-          <Tab label="Activos" />
-        </Tabs>
-      </Box>
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+        {tabs.map((t) => (
+          <Button
+            key={t.id}
+            variant={tab === t.id ? 'primary' : 'secondary'}
+            size="sm"
+            onClick={() => setTab(t.id)}
+          >
+            {t.label} ({t.count})
+          </Button>
+        ))}
+      </div>
 
-      {/* Table */}
+      {/* Prestamos List */}
       {filteredPrestamos.length > 0 ? (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Item</TableCell>
-                <TableCell>Prestado a</TableCell>
-                <TableCell>Origen → Destino</TableCell>
-                <TableCell>Fecha Préstamo</TableCell>
-                <TableCell>Devolución Esperada</TableCell>
-                <TableCell>Estado</TableCell>
-                <TableCell align="right">Acciones</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredPrestamos.map((prestamo) => (
-                <TableRow key={prestamo.id} hover>
-                  <TableCell>
-                    <Typography variant="body2" fontWeight={500}>
+        <div className="space-y-4">
+          {/* Desktop Table Header */}
+          <div className="hidden lg:grid lg:grid-cols-7 gap-4 px-4 py-2 bg-secondary rounded-lg text-sm font-medium text-text-secondary">
+            <div>Item</div>
+            <div>Prestado a</div>
+            <div>Origen → Destino</div>
+            <div>Fecha Préstamo</div>
+            <div>Devolución</div>
+            <div>Estado</div>
+            <div className="text-right">Acciones</div>
+          </div>
+
+          {/* Prestamo Cards/Rows */}
+          {filteredPrestamos.map((prestamo) => (
+            <Card key={prestamo.id} hover>
+              {/* Desktop View */}
+              <div className="hidden lg:grid lg:grid-cols-7 gap-4 items-center">
+                <div>
+                  <p className="font-semibold text-text-primary truncate">
+                    {prestamo.item?.descripcion || 'N/A'}
+                  </p>
+                  {prestamo.item?.categoria && (
+                    <p className="text-sm text-text-muted">{prestamo.item.categoria}</p>
+                  )}
+                </div>
+
+                <div>
+                  {prestamo.prestadoAUsuario ? (
+                    <p className="text-text-primary">
+                      {prestamo.prestadoAUsuario.nombre} {prestamo.prestadoAUsuario.apellido}
+                    </p>
+                  ) : prestamo.prestadoABanda ? (
+                    <Badge variant="accent">{prestamo.prestadoABanda.nombre}</Badge>
+                  ) : (
+                    <span className="text-text-muted">N/A</span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 text-sm text-text-secondary">
+                  <span className="truncate">{prestamo.localOrigen?.nombre || 'N/A'}</span>
+                  <ArrowRight className="w-4 h-4 text-text-muted flex-shrink-0" />
+                  <span className="truncate">{prestamo.localDestino?.nombre || 'N/A'}</span>
+                </div>
+
+                <div className="text-sm text-text-secondary">
+                  {formatDate(prestamo.fechaPrestamo)}
+                </div>
+
+                <div className="text-sm text-text-secondary">
+                  {formatDate(prestamo.fechaDevolucionEsperada)}
+                </div>
+
+                <div>{getEstadoBadge(prestamo.estado)}</div>
+
+                <div className="flex gap-2 justify-end">
+                  {prestamo.estado === 'ACTIVO' && prestamo.prestadoPor?.id === user.id && (
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      icon={CheckCircle}
+                      onClick={() => handleDevolver(prestamo.id)}
+                      loading={actionLoading === prestamo.id}
+                    >
+                      Devolver
+                    </Button>
+                  )}
+                  {prestamo.prestadoPor?.id === user.id && (
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      icon={Trash2}
+                      onClick={() => handleDelete(prestamo.id)}
+                      loading={actionLoading === prestamo.id}
+                    >
+                      Eliminar
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* Mobile View */}
+              <div className="lg:hidden space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-text-primary truncate">
                       {prestamo.item?.descripcion || 'N/A'}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    {prestamo.prestadoAUsuario ? (
-                      <Typography variant="body2">
-                        {prestamo.prestadoAUsuario.nombre} {prestamo.prestadoAUsuario.apellido}
-                      </Typography>
-                    ) : prestamo.prestadoABanda ? (
-                      <Chip
-                        label={prestamo.prestadoABanda.nombre}
-                        size="small"
-                        color="primary"
-                        variant="outlined"
-                      />
-                    ) : (
-                      'N/A'
+                    </h3>
+                    {prestamo.item?.categoria && (
+                      <p className="text-sm text-text-muted">{prestamo.item.categoria}</p>
                     )}
-                  </TableCell>
-                  <TableCell>
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <Typography variant="body2">
-                        {prestamo.localOrigen?.nombre || 'N/A'}
-                      </Typography>
-                      <SwapHorizIcon fontSize="small" color="action" />
-                      <Typography variant="body2">
-                        {prestamo.localDestino?.nombre || 'N/A'}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">
-                      {formatDate(prestamo.fechaPrestamo)}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">
-                      {formatDate(prestamo.fechaDevolucionEsperada)}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={prestamo.estado}
-                      size="small"
-                      color={getEstadoColor(prestamo.estado)}
-                    />
-                  </TableCell>
-                  <TableCell align="right">
-                    <Box display="flex" gap={1} justifyContent="flex-end">
-                      {prestamo.estado === 'ACTIVO' && prestamo.prestadoPor?.id === user.id && (
-                        <Button
-                          size="small"
-                          variant="contained"
-                          color="success"
-                          startIcon={<CheckCircleIcon />}
-                          onClick={() => handleDevolver(prestamo.id)}
-                        >
-                          Devolver
-                        </Button>
-                      )}
-                      {prestamo.prestadoPor?.id === user.id && (
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          color="error"
-                          onClick={() => handleDelete(prestamo.id)}
-                        >
-                          Eliminar
-                        </Button>
-                      )}
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                  </div>
+                  {getEstadoBadge(prestamo.estado)}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <p className="text-text-muted">Prestado a</p>
+                    <p className="text-text-primary">
+                      {prestamo.prestadoAUsuario
+                        ? `${prestamo.prestadoAUsuario.nombre} ${prestamo.prestadoAUsuario.apellido}`
+                        : prestamo.prestadoABanda?.nombre || 'N/A'
+                      }
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-text-muted">Devolución</p>
+                    <p className="text-text-primary">{formatDate(prestamo.fechaDevolucionEsperada)}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 text-sm text-text-secondary p-2 bg-secondary rounded">
+                  <span className="truncate">{prestamo.localOrigen?.nombre || 'N/A'}</span>
+                  <ArrowRight className="w-4 h-4 text-text-muted flex-shrink-0" />
+                  <span className="truncate">{prestamo.localDestino?.nombre || 'N/A'}</span>
+                </div>
+
+                {(prestamo.prestadoPor?.id === user.id) && (
+                  <div className="flex gap-2 pt-2 border-t border-border">
+                    {prestamo.estado === 'ACTIVO' && (
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        icon={CheckCircle}
+                        fullWidth
+                        onClick={() => handleDevolver(prestamo.id)}
+                        loading={actionLoading === prestamo.id}
+                      >
+                        Devolver
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      icon={Trash2}
+                      fullWidth
+                      onClick={() => handleDelete(prestamo.id)}
+                      loading={actionLoading === prestamo.id}
+                    >
+                      Eliminar
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </Card>
+          ))}
+        </div>
       ) : (
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
-          <Typography variant="body1" color="text.secondary">
-            No hay préstamos para mostrar
-          </Typography>
-        </Paper>
+        // Empty state
+        <div className="text-center py-16 px-4">
+          <div className="flex justify-center mb-4">
+            <div className="p-4 bg-accent/10 rounded-full">
+              <Package className="w-12 h-12 text-accent" />
+            </div>
+          </div>
+          <h3 className="text-xl font-semibold text-text-primary mb-2">
+            {tab === 'TODOS'
+              ? 'No hay préstamos'
+              : tab === 'PRESTADOS'
+                ? 'No has prestado nada'
+                : tab === 'RECIBIDOS'
+                  ? 'No has recibido préstamos'
+                  : 'No hay préstamos activos'
+            }
+          </h3>
+          <p className="text-text-secondary mb-6">
+            Comienza creando un nuevo préstamo de equipamiento
+          </p>
+          <Button
+            variant="primary"
+            icon={Plus}
+            onClick={() => setOpenForm(true)}
+          >
+            Nuevo Préstamo
+          </Button>
+        </div>
       )}
 
-      {/* Form Dialog */}
+      {/* Form Modal */}
       {openForm && (
         <PrestamoForm
           open={openForm}
           onClose={handleFormClose}
         />
       )}
-    </Box>
+    </div>
   );
 };
 
