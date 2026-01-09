@@ -1,8 +1,31 @@
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
+import reservaService from '../../services/reservaService';
 
 const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
+  const [approvalCount, setApprovalCount] = useState(0);
+
+  useEffect(() => {
+    if (user) {
+      loadApprovalCount();
+      // Actualizar cada 30 segundos
+      const interval = setInterval(loadApprovalCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
+
+  const loadApprovalCount = async () => {
+    try {
+      const response = await reservaService.getAprobacionesPendientes(user.id);
+      setApprovalCount((response || []).length);
+    } catch (error) {
+      console.error('Error loading approval count:', error);
+    }
+  };
 
   const navItems = [
     {
@@ -34,16 +57,17 @@ const BottomNav = () => {
       isMain: true, // Botón principal más grande
     },
     {
-      path: '/items',
-      label: 'Items',
+      path: '/aprobaciones',
+      label: 'Aprobar',
+      badge: approvalCount > 0 ? approvalCount : null,
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
     },
     {
-      path: '/perfil',
+      path: '/profile',
       label: 'Perfil',
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -88,11 +112,18 @@ const BottomNav = () => {
               key={item.path}
               onClick={() => navigate(item.path)}
               className={`
-                flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors
+                flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors relative
                 ${active ? 'text-accent' : 'text-text-muted'}
               `}
             >
-              {item.icon}
+              <div className="relative">
+                {item.icon}
+                {item.badge && (
+                  <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[16px] h-4 px-1 text-[10px] font-semibold text-white bg-yellow-500 rounded-full">
+                    {item.badge}
+                  </span>
+                )}
+              </div>
               <span className="text-xs font-medium">{item.label}</span>
             </button>
           );

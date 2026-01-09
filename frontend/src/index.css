@@ -8,31 +8,15 @@
 
 /* Base styles */
 @layer base {
-  * {
-    @apply border-border;
-  }
-
   html {
-    @apply antialiased;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
 
   body {
-    @apply bg-bg-secondary text-text-primary font-sans;
     margin: 0;
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-  }
-
-  /* Remove default button styles */
-  button {
-    @apply font-sans;
-  }
-
-  /* Input defaults */
-  input, textarea, select {
-    @apply font-sans;
   }
 }
 
@@ -49,15 +33,15 @@
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    @apply bg-text-muted/30 rounded-full;
+    @apply bg-gray-300 rounded-full;
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    @apply bg-text-muted/50;
+    @apply bg-gray-400;
   }
 
   /* Fade in animation */
-  .fade-in {
+  .animate-fade-in {
     animation: fadeIn 0.2s ease-in;
   }
 
@@ -91,16 +75,6 @@
 @layer components {
   /* Focus ring for accessibility */
   .focus-ring {
-    @apply focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2;
-  }
-
-  /* Card shadow on hover */
-  .card-hover {
-    @apply transition-shadow duration-200 hover:shadow-notion-md;
-  }
-
-  /* Notion-style divider */
-  .divider {
-    @apply border-t border-border my-4;
+    @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
   }
 }

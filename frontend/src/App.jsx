@@ -1,15 +1,15 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider } from '@mui/material/styles';
-import { CssBaseline } from '@mui/material';
-import theme from './styles/theme';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
-import MainLayout from './components/common/MainLayout';
+import { Layout } from './components/layout';
 
 // Pages
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import Dashboard from './pages/Dashboard';
+import Calendario from './pages/Calendario';
+import NuevaReserva from './pages/NuevaReserva';
+import ApprovalRequests from './pages/ApprovalRequests';
 import Items from './pages/Items';
 import Locales from './pages/Locales';
 import Usuarios from './pages/Usuarios';
@@ -19,127 +19,165 @@ import Prestamos from './pages/Prestamos';
 import Reservas from './pages/Reservas';
 import Profile from './pages/Profile';
 import Notifications from './pages/Notifications';
+import DashboardExample from './pages/DashboardExample';
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            {/* Rutas públicas */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Rutas públicas */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
-            {/* Rutas protegidas con layout */}
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Dashboard />
-                  </MainLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/items"
-              element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Items />
-                  </MainLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/locales"
-              element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Locales />
-                  </MainLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/usuarios"
-              element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Usuarios />
-                  </MainLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/bandas"
-              element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Bandas />
-                  </MainLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/mis-bandas"
-              element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <MisBandas />
-                  </MainLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/prestamos"
-              element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Prestamos />
-                  </MainLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/reservas"
-              element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Reservas />
-                  </MainLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Profile />
-                  </MainLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/notifications"
-              element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Notifications />
-                  </MainLayout>
-                </ProtectedRoute>
-              }
-            />
+          {/* Rutas protegidas con layout */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Dashboard />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/calendario"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Calendario />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/nueva-reserva"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <NuevaReserva />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/aprobaciones"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ApprovalRequests />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/items"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Items />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/locales"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Locales />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/usuarios"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Usuarios />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/bandas"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Bandas />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/mis-bandas"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <MisBandas />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/prestamos"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Prestamos />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reservas"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Reservas />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Profile />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Notifications />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
 
-            {/* Redirección por defecto */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
-    </ThemeProvider>
+          {/* Página de ejemplo del nuevo diseño */}
+          <Route
+            path="/example"
+            element={
+              <ProtectedRoute>
+                <DashboardExample />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Redirección por defecto */}
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 

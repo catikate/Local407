@@ -29,8 +29,8 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    // Si el error es 401 Unauthorized, el token es inválido
-    if (error.response && error.response.status === 401) {
+    // Si el error es 401 Unauthorized o 403 Forbidden con token expirado
+    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
       // Limpiar localStorage
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem('local407_user');
