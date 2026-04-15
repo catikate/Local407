@@ -1,165 +1,89 @@
-# Local407 🎸
+# Local407
 
-REST API + frontend for managing rehearsal space scheduling between multiple bands.
+REST API and frontend for managing rehearsal space scheduling between multiple bands.
 
-## The Problem
-
-4 bands sharing 1 rehearsal space = constant scheduling conflicts, double bookings, and frustrated musicians. Built this to solve it.
-
-## Tech Stack
-
-- **Java 25** + **Spring Boot 4**
-- **Spring Security** — JWT authentication
-- **Spring Data JPA** + **Hibernate**
-- **Spring Mail** — HTML email notifications
-- **MySQL 9.5** (H2 for testing)
-- **React 19** + **Vite** + **Tailwind CSS**
-- **Gradle** + **Docker Compose**
-- **JUnit 5** + **Mockito** — 101 automated tests
-- **GitHub Actions** — CI/CD pipeline
-
-## Features
-
-- 🔐 **Authentication** — JWT tokens with BCrypt password encryption
-- 📅 **Smart booking** — Reservation system with approval workflows and calendar view
-- 🎸 **Band management** — Create bands, manage members, invite users
-- 🎹 **Equipment loans** — Lend gear between users and bands, with overdue detection
-- 🔔 **Notifications** — In-app + email alerts for bookings, loans, invitations, and reminders
-- ✅ **Fully tested** — 101 tests across services, controllers, and security
-
-## Architecture
-
-```
-src/main/java/com/example/demo/
-├── controller/      # 11 REST controllers
-├── service/         # Business logic
-├── model/           # 10 JPA entities + 6 enums
-├── repository/      # Data access with custom queries
-├── security/        # JWT filter, auth components
-├── dto/             # Request/Response objects
-├── exception/       # Custom exceptions + global handler
-└── scheduler/       # Scheduled tasks (overdue detection)
-
-frontend/src/
-├── pages/           # Dashboard, Calendar, Loans, Items, Profile...
-├── components/      # Layout (Sidebar, TopBar, BottomNav) + UI system
-├── services/        # API client layer
-├── contexts/        # Auth context
-└── utils/           # Helpers
-```
-
-## Quick Start
-
-### Prerequisites
-- Java 25+
-- MySQL 9.5+ (or use Docker)
-- Node.js 18+
-
-### Setup
-
-1. **Clone the repo**
-```bash
-git clone https://github.com/catikate/Local407.git
-cd Local407
-```
-
-2. **Configure environment**
-```bash
-cp .env.example .env
-# Edit .env with your credentials:
-# DB_USERNAME, DB_PASSWORD, JWT_SECRET, MAIL_USERNAME, MAIL_PASSWORD
-```
-
-> ⚠️ Never commit credentials. The `.env` file is gitignored.
-
-3. **Start the backend**
-```bash
-docker compose up -d   # Start MySQL
-./gradlew bootRun      # Start Spring Boot on :8080
-```
-
-4. **Start the frontend**
-```bash
-cd frontend
-npm install
-npm run dev            # Start Vite on :5173
-```
-
-5. **Run tests**
-```bash
-./gradlew test
-```
-
-## API Endpoints
-
-### Auth
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/register` | Register new user |
-| POST | `/api/auth/login` | Login, returns JWT |
-
-### Bands
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/bandas` | List all bands |
-| POST | `/api/bandas` | Create band |
-| POST | `/api/bandas/{id}/miembros/{userId}` | Add member |
-| POST | `/api/bandas/{id}/unirse/{userId}` | Join band |
-
-### Reservations
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/reservas` | List reservations |
-| POST | `/api/reservas` | Create reservation |
-| GET | `/api/reservas/usuario/{id}/calendario` | Calendar view |
-| PUT | `/api/reservas/aprobaciones/{id}` | Approve/reject |
-| DELETE | `/api/reservas/{id}` | Cancel reservation |
-
-### Loans
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/prestamos` | List loans |
-| POST | `/api/prestamos` | Create loan |
-| PUT | `/api/prestamos/{id}/devolver` | Return item |
-| GET | `/api/prestamos/vencidos` | Overdue loans |
-
-### Notifications
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/notifications/usuario/{id}` | User notifications |
-| GET | `/api/notifications/usuario/{id}/unread/count` | Unread count |
-| PATCH | `/api/notifications/usuario/{id}/read-all` | Mark all read |
-
-> Full CRUD available for all resources. See [API docs](src/main/java/com/example/demo/controller/) for complete endpoint list.
-
-## Testing
-
-```bash
-./gradlew test                       # Run all 101 tests
-./gradlew test --tests JwtUtilTest   # Run specific test class
-```
-
-Tests cover:
-- **Services** (67 tests) — Business logic with mocked repositories
-- **Controllers** (27 tests) — Integration tests for auth and reservations
-- **Security** (7 tests) — JWT token generation and validation
-
-## What I Learned
-
-- Designing a relational schema with complex relationships (Users ↔ Bands ↔ Bookings ↔ Loans)
-- Implementing JWT authentication from scratch (not just copy-paste)
-- Building a full notification system with email integration (Spring Mail + HTML templates)
-- Writing meaningful tests that catch real bugs
-- Setting up CI/CD that actually runs on every push
-
-## Future Improvements
-
-- [ ] WebSocket real-time notifications
-- [ ] Recurring bookings
-- [ ] User roles and permissions (admin, member, guest)
-- [ ] Equipment maintenance tracking
-- [ ] File uploads for band photos and equipment images
+**[github.com/catikate/Local407](https://github.com/catikate/Local407)**
 
 ---
 
-Built by [Catalina Viscoitaliano](https://github.com/catikate) — Backend developer based in Barcelona.
+## The problem
+
+4 bands sharing 1 rehearsal space. Constant scheduling conflicts, double bookings, frustrated musicians. Built this to solve it.
+
+---
+
+## Stack
+
+| Layer | Technology |
+|---|---|
+| Backend | Java 25 + Spring Boot 4 |
+| Auth | Spring Security — JWT + BCrypt |
+| Persistence | Spring Data JPA + Hibernate + MySQL 9.5 |
+| Notifications | Spring Mail — HTML email templates |
+| Frontend | React 19 + Vite + Tailwind CSS |
+| Testing | JUnit 5 + Mockito — 101 automated tests |
+| CI/CD | GitHub Actions + Docker Compose |
+
+---
+
+## Architecture decisions
+
+**Layered architecture with clear separation.** Controllers handle HTTP, services own the business logic, repositories manage data access. This made the codebase easy to test — services are tested in isolation with mocked repositories.
+
+**JWT authentication implemented from scratch.** Rather than relying on a pre-built solution, I built the JWT filter, token generation, and validation layer manually. This forced a real understanding of how stateless authentication works.
+
+**Approval workflow for bookings.** Reservations go through a state machine: pending → approved/rejected. This was a deliberate product decision to avoid conflicts when two bands try to book the same slot simultaneously.
+
+**Scheduled tasks for overdue detection.** A Spring `@Scheduled` component runs periodically to detect overdue equipment loans and trigger notifications. No manual intervention required.
+
+---
+
+## Features
+
+- JWT authentication with BCrypt password encryption
+- Reservation system with approval workflows and calendar view
+- Band management — create bands, manage members, invite users
+- Equipment loans between users and bands, with overdue detection
+- Notification system — in-app and email alerts
+
+---
+
+## Quick start
+
+```bash
+# Clone and configure
+git clone https://github.com/catikate/Local407.git
+cd Local407
+cp .env.example .env   # fill in DB credentials, JWT secret, mail config
+
+# Start backend
+docker compose up -d   # MySQL
+./gradlew bootRun      # Spring Boot on :8080
+
+# Start frontend
+cd frontend
+npm install
+npm run dev            # Vite on :5173
+
+# Run tests
+./gradlew test
+Testing
+101 automated tests across three layers:
+
+Services (67) — business logic with mocked repositories
+Controllers (27) — integration tests for auth and reservations
+Security (7) — JWT token generation and validation
+
+./gradlew test                       # all tests
+./gradlew test --tests JwtUtilTest   # specific class
+API — main endpoints
+Resource	Method	Endpoint
+Auth	POST	/api/auth/register /api/auth/login
+Bands	GET POST	/api/bandas
+Reservations	GET POST PUT DELETE	/api/reservas
+Loans	GET POST PUT	/api/prestamos
+Notifications	GET PATCH	/api/notifications/usuario/{id}
+Built by Catalina Viscoitaliano — Backend developer based in Barcelona.
+
+
+
