@@ -96,7 +96,7 @@ const TopBar = ({ title = 'Dashboard' }) => {
                     <button
                       onClick={() => {
                         setShowUserMenu(false);
-                        navigate('/perfil');
+                        navigate('/profile');
                       }}
                       className="w-full text-left px-3 py-2 rounded-md hover:bg-hover text-sm text-text-primary transition-colors"
                     >

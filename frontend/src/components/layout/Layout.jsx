@@ -12,7 +12,7 @@ const Layout = ({ children }) => {
     if (path === '/' || path === '/dashboard') return 'Dashboard';
     if (path.startsWith('/calendario')) return 'Calendario';
     if (path.startsWith('/items')) return 'Equipamiento';
-    if (path.startsWith('/perfil')) return 'Perfil';
+    if (path.startsWith('/profile')) return 'Perfil';
     if (path.startsWith('/nueva-reserva')) return 'Nueva Reserva';
     if (path.startsWith('/notifications')) return 'Notificaciones';
     return 'Local407';
