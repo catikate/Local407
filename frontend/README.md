@@ -68,28 +68,22 @@ The production-ready files will be in the `dist` directory.
 ```
 frontend/
 ├── src/
-│   ├── components/      # Reusable components
-│   │   ├── Navbar.jsx
-│   │   └── PrivateRoute.jsx
-│   ├── contexts/        # React contexts
-│   │   └── AuthContext.jsx
-│   ├── pages/          # Page components
-│   │   ├── Home.jsx
-│   │   ├── Login.jsx
-│   │   ├── Register.jsx
-│   │   ├── Locales.jsx
-│   │   ├── Reservas.jsx
-│   │   └── Invitaciones.jsx
-│   ├── services/       # API services
-│   │   ├── api.js
-│   │   ├── authService.js
-│   │   ├── localService.js
-│   │   ├── reservaService.js
-│   │   └── invitacionService.js
-│   ├── App.jsx
-│   ├── App.css
+│   ├── components/
+│   │   ├── auth/         # ProtectedRoute
+│   │   ├── features/     # EventCard, NotificationItem
+│   │   ├── items/        # ItemCard, ItemFilters, ItemForm
+│   │   ├── layout/       # Layout, Sidebar, TopBar, BottomNav
+│   │   ├── prestamos/    # PrestamoForm
+│   │   ├── reservas/     # CalendarView, ReservaForm, ReservaCard
+│   │   └── ui/           # Button, Card, Input, Badge
+│   ├── context/          # AuthContext
+│   ├── hooks/
+│   ├── pages/            # One file per route (auth/ holds Login and Register)
+│   ├── services/         # Axios API clients (api.js + one per resource)
+│   ├── utils/
+│   ├── App.jsx           # Routes
 │   └── main.jsx
-├── .env
+├── .env.example
 └── package.json
 ```
 

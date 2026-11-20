@@ -12,7 +12,6 @@ import NuevaReserva from './pages/NuevaReserva';
 import ApprovalRequests from './pages/ApprovalRequests';
 import Items from './pages/Items';
 import Locales from './pages/Locales';
-import Usuarios from './pages/Usuarios';
 import Bandas from './pages/Bandas';
 import MisBandas from './pages/MisBandas';
 import Prestamos from './pages/Prestamos';
@@ -86,16 +85,6 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <Locales />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/usuarios"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <Usuarios />
                 </Layout>
               </ProtectedRoute>
             }
