@@ -30,9 +30,10 @@ COPY --from=build /app/build/libs/*.jar app.jar
 # Expose port
 EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
+# Health check: the app has no actuator, so check that the port accepts connections.
+# Spring only opens it once the context (including the DB connection) is up.
+HEALTHCHECK --interval=15s --timeout=3s --start-period=60s --retries=5 \
+  CMD nc -z 127.0.0.1 ${SERVER_PORT:-8080} || exit 1
 
 # Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
