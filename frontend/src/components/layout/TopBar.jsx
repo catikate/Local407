@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
+import { useUnreadNotifications } from '../../hooks/useUnreadNotifications';
 
 const TopBar = ({ title = 'Dashboard' }) => {
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userData = JSON.parse(localStorage.getItem('local407_user') || '{}');
-  const unreadCount = 3; // TODO: Obtener del contexto de notificaciones
+  const { user } = useAuth();
+  const { count: unreadCount } = useUnreadNotifications(user?.id);
 
   const handleLogout = () => {
     localStorage.removeItem('local407_token');
@@ -39,7 +42,7 @@ const TopBar = ({ title = 'Dashboard' }) => {
           <button
             onClick={() => navigate('/notifications')}
             className="relative p-2 rounded-lg hover:bg-hover transition-colors"
-            aria-label="Notificaciones"
+            aria-label={unreadCount > 0 ? `Notificaciones (${unreadCount} sin leer)` : 'Notificaciones'}
           >
             <svg
               className="w-5 h-5 text-text-secondary"
@@ -55,8 +58,8 @@ const TopBar = ({ title = 'Dashboard' }) => {
               />
             </svg>
             {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-error text-white text-xs font-medium">
-                {unreadCount}
+              <span className="absolute top-0.5 right-0.5 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-error text-white text-xs font-medium">
+                {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             )}
           </button>
