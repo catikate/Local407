@@ -71,7 +71,7 @@ frontend/
 │   ├── components/
 │   │   ├── auth/         # ProtectedRoute
 │   │   ├── features/     # EventCard, NotificationItem
-│   │   ├── items/        # ItemCard, ItemFilters, ItemForm
+│   │   ├── items/        # ItemForm, ItemDetailModal
 │   │   ├── layout/       # Layout, Sidebar, TopBar, BottomNav
 │   │   ├── prestamos/    # PrestamoForm
 │   │   ├── reservas/     # CalendarView, ReservaForm, ReservaCard
