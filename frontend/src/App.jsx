@@ -19,7 +19,6 @@ import Prestamos from './pages/Prestamos';
 import Reservas from './pages/Reservas';
 import Profile from './pages/Profile';
 import Notifications from './pages/Notifications';
-import DashboardExample from './pages/DashboardExample';
 
 function App() {
   return (
@@ -158,16 +157,6 @@ function App() {
                 <Layout>
                   <Notifications />
                 </Layout>
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Página de ejemplo del nuevo diseño */}
-          <Route
-            path="/example"
-            element={
-              <ProtectedRoute>
-                <DashboardExample />
               </ProtectedRoute>
             }
           />
