@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CalendarView from './CalendarView';
@@ -40,6 +40,17 @@ const TestWrapper = ({ children }) => (
 );
 
 describe('CalendarView', () => {
+  // CalendarView selecciona el día de hoy por defecto, y los eventos de prueba
+  // están el 2025-01-15. Fijamos solo Date para no interferir con waitFor/userEvent.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2025-01-15T09:00:00'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('renders calendar component', () => {
     render(
       <TestWrapper>
@@ -199,7 +210,7 @@ describe('CalendarView', () => {
     );
 
     await waitFor(() => {
-      const personalEvent = screen.getByText('Show Personal').closest('.MuiPaper-root');
+      const personalEvent = screen.getByText('Show Personal', { selector: '.MuiTypography-subtitle2' }).closest('.MuiPaper-root');
       if (personalEvent) {
         const style = window.getComputedStyle(personalEvent);
         expect(style.borderLeftColor).toBeTruthy();

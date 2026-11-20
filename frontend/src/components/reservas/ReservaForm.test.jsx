@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ReservaForm from './ReservaForm';
 import { AuthContext } from '../../context/AuthContext';
@@ -57,6 +57,13 @@ const TestWrapper = ({ children }) => (
   </AuthContext.Provider>
 );
 
+// Los InputLabel del formulario no están asociados al Select (no hay labelId),
+// así que getByLabelText no funciona: buscamos el combobox dentro del FormControl de la etiqueta.
+const getSelect = (labelText) => {
+  const label = screen.getByText(labelText, { selector: 'label' });
+  return within(label.closest('.MuiFormControl-root')).getByRole('combobox');
+};
+
 describe('ReservaForm', () => {
   beforeEach(() => {
     localService.getAll.mockResolvedValue({ data: mockLocales });
@@ -80,7 +87,7 @@ describe('ReservaForm', () => {
       expect(screen.getByText('Nueva Reserva')).toBeInTheDocument();
     });
 
-    expect(screen.getByLabelText(/Tipo de Evento/i)).toBeInTheDocument();
+    expect(getSelect('Tipo de Evento')).toBeInTheDocument();
   });
 
   it('renders form with existing reserva data for editing', async () => {
@@ -115,7 +122,7 @@ describe('ReservaForm', () => {
     );
 
     await waitFor(() => {
-      const localField = screen.getByLabelText(/Local$/i);
+      const localField = getSelect('Local');
       expect(localField).toBeInTheDocument();
     });
   });
@@ -135,10 +142,10 @@ describe('ReservaForm', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/Tipo de Evento/i)).toBeInTheDocument();
+      expect(getSelect('Tipo de Evento')).toBeInTheDocument();
     });
 
-    const tipoSelect = screen.getByLabelText(/Tipo de Evento/i);
+    const tipoSelect = getSelect('Tipo de Evento');
     await user.click(tipoSelect);
 
     const showOption = await screen.findByText('Show de Banda');
@@ -167,7 +174,7 @@ describe('ReservaForm', () => {
       expect(screen.getByText(/Reserva de día completo/i)).toBeInTheDocument();
     });
 
-    const tipoSelect = screen.getByLabelText(/Tipo de Evento/i);
+    const tipoSelect = getSelect('Tipo de Evento');
     await user.click(tipoSelect);
 
     const showOption = await screen.findByText('Show de Banda');
@@ -237,8 +244,8 @@ describe('ReservaForm', () => {
     );
 
     await waitFor(() => {
-      const tipoSelect = screen.getByLabelText(/Tipo de Evento/i);
-      expect(tipoSelect).toBeDisabled();
+      const tipoSelect = getSelect('Tipo de Evento');
+      expect(tipoSelect).toHaveAttribute('aria-disabled', 'true');
     });
   });
 
@@ -283,10 +290,10 @@ describe('ReservaForm', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/Tipo de Evento/i)).toBeInTheDocument();
+      expect(getSelect('Tipo de Evento')).toBeInTheDocument();
     });
 
-    const tipoSelect = screen.getByLabelText(/Tipo de Evento/i);
+    const tipoSelect = getSelect('Tipo de Evento');
     await user.click(tipoSelect);
 
     const showOption = await screen.findByText('Show de Banda');
@@ -312,10 +319,10 @@ describe('ReservaForm', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/Tipo de Evento/i)).toBeInTheDocument();
+      expect(getSelect('Tipo de Evento')).toBeInTheDocument();
     });
 
-    const tipoSelect = screen.getByLabelText(/Tipo de Evento/i);
+    const tipoSelect = getSelect('Tipo de Evento');
     await user.click(tipoSelect);
 
     const showPersonalOption = await screen.findByText('Show Personal');
