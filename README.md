@@ -1,5 +1,7 @@
 # Local407 🎸
 
+[![CI/CD Pipeline](https://github.com/catikate/Local407/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/catikate/Local407/actions/workflows/ci.yml)
+
 REST API + frontend for managing rehearsal space scheduling between multiple bands.
 
 ## The Problem
@@ -13,82 +15,41 @@ REST API + frontend for managing rehearsal space scheduling between multiple ban
 - **Spring Data JPA** + **Hibernate**
 - **Spring Mail** — HTML email notifications
 - **MySQL 9.5** (H2 for testing)
-- **React 19** + **Vite** + **Tailwind CSS**
-- **Gradle** + **Docker Compose**
-- **JUnit 5** + **Mockito** — 101 automated tests
-- **GitHub Actions** — CI/CD pipeline
+- **React 19** + **Vite** + **Tailwind CSS** + **Material UI**
+- **Gradle** + **Docker Compose** (backend, frontend with nginx, MySQL, phpMyAdmin)
+- **JUnit 5** + **Mockito** — 107 backend tests · **Vitest** + **Testing Library** — 32 frontend tests
+- **GitHub Actions** — CI for backend and frontend
 
 ## Features
 
-- 🔐 **Authentication** — JWT tokens with BCrypt password encryption
+- 🔐 **Authentication** — JWT tokens
 - 📅 **Smart booking** — Reservation system with approval workflows and calendar view
 - 🎸 **Band management** — Create bands, manage members, invite users
 - 🎹 **Equipment loans** — Lend gear between users and bands, with overdue detection
 - 🔔 **Notifications** — In-app + email alerts for bookings, loans, invitations, and reminders
-- ✅ **Fully tested** — 101 tests across services, controllers, and security
+- ✅ **Tested** — 107 backend tests (services, controllers, security, demo data) and 32 frontend tests
 
-## Architecture
+## Run it in one command
 
-```
-src/main/java/com/example/demo/
-├── controller/      # 11 REST controllers
-├── service/         # Business logic
-├── model/           # 10 JPA entities + 6 enums
-├── repository/      # Data access with custom queries
-├── security/        # JWT filter, auth components
-├── dto/             # Request/Response objects
-├── exception/       # Custom exceptions + global handler
-└── scheduler/       # Scheduled tasks (overdue detection)
+You only need [Docker](https://docs.docker.com/get-docker/) with Compose v2:
 
-frontend/src/
-├── pages/           # Dashboard, Calendar, Loans, Items, Profile...
-├── components/      # Layout (Sidebar, TopBar, BottomNav) + UI system
-├── services/        # API client layer
-├── contexts/        # Auth context
-└── utils/           # Helpers
-```
-
-## Quick Start
-
-### Prerequisites
-- Java 25+
-- MySQL 9.5+ (or use Docker)
-- Node.js 18+
-
-### Setup
-
-1. **Clone the repo**
 ```bash
 git clone https://github.com/catikate/Local407.git
 cd Local407
+docker compose up --build
 ```
 
-2. **Configure environment**
-```bash
-cp .env.example .env
-# Edit .env with your credentials:
-# DB_USERNAME, DB_PASSWORD, JWT_SECRET, MAIL_USERNAME, MAIL_PASSWORD
-```
+The first build takes a few minutes. When everything is healthy:
 
-> ⚠️ Never commit credentials. The `.env` file is gitignored.
+| Service | URL |
+|---------|-----|
+| App (React + nginx) | http://localhost:3000 |
+| API (Spring Boot) | http://localhost:8080/api |
+| phpMyAdmin | http://localhost:8081 |
 
-3. **Start the backend**
-```bash
-docker compose up -d   # Start MySQL
-./gradlew bootRun      # Start Spring Boot on :8080
-```
+Log in with one of the [demo users](#demo-data) below. Stop with `docker compose down`; add `-v` to also delete the database and start from fresh demo data.
 
-4. **Start the frontend**
-```bash
-cd frontend
-npm install
-npm run dev            # Start Vite on :5173
-```
-
-5. **Run tests**
-```bash
-./gradlew test
-```
+The values in `compose.yaml` are demo-only defaults, so no `.env` is needed. To use your own database password, JWT secret or SMTP account, copy `.env.example` to `.env` and edit it.
 
 ## Demo data
 
@@ -103,6 +64,81 @@ With the `demo` Spring profile the backend creates sample data on startup. It is
 It also creates 1 local (**Local 407**), 2 bands (**Los Reverb**, **Cuerdas Sueltas**), 6 items, 1 confirmed rehearsal (tomorrow, 18:00-20:00) and 1 active loan.
 
 > ⚠️ These credentials are public and for local demos only. To start with an empty database, set `SPRING_PROFILES_ACTIVE=` (empty) in `.env`, or do not use the `demo` profile.
+
+## Screenshots
+
+<!-- Replace each placeholder with the real image: save it in docs/screenshots/ and use
+     ![Dashboard](docs/screenshots/dashboard.png) -->
+
+| Screen | File |
+|--------|------|
+| Dashboard | _pending_ `docs/screenshots/dashboard.png` |
+| Calendar and reservations | _pending_ `docs/screenshots/calendario.png` |
+| Equipment (items) | _pending_ `docs/screenshots/items.png` |
+| Loans | _pending_ `docs/screenshots/prestamos.png` |
+| Mobile view | _pending_ `docs/screenshots/mobile.png` |
+
+## Architecture
+
+```
+src/main/java/com/example/demo/
+├── controller/      # 11 REST controllers
+├── service/         # Business logic
+├── model/           # 10 JPA entities + 6 enums
+├── repository/      # Data access with custom queries
+├── security/        # JWT filter, auth components
+├── config/          # Demo data seeder (profile "demo")
+├── dto/             # Request/Response objects
+├── exception/       # Custom exceptions + global handler
+└── scheduler/       # Scheduled tasks (overdue detection)
+
+frontend/src/
+├── pages/           # Dashboard, Calendar, Loans, Items, Profile...
+├── components/      # Layout (Sidebar, TopBar, BottomNav) + UI system
+├── services/        # API client layer
+├── context/         # Auth context
+├── hooks/           # useAuth, useUnreadNotifications
+└── utils/           # Helpers
+```
+
+## Development setup
+
+Run the pieces yourself instead of the full compose stack.
+
+### Prerequisites
+- Java 25 (Gradle can provision it)
+- Node.js 20.19+ (CI uses 22)
+- Docker (for MySQL), or your own MySQL 9.5
+
+### Setup
+
+1. **Configure environment**
+```bash
+cp .env.example .env
+# Edit .env: DB_URL, DB_USERNAME, DB_PASSWORD, JWT_SECRET, MAIL_USERNAME, MAIL_PASSWORD
+```
+
+> ⚠️ Never commit credentials. The `.env` file is gitignored.
+
+2. **Start the database and the backend**
+```bash
+docker compose up -d mysql                    # only MySQL
+SPRING_PROFILES_ACTIVE=demo ./gradlew bootRun # Spring Boot on :8080, with demo data
+```
+
+3. **Start the frontend**
+```bash
+cd frontend
+cp .env.example .env     # VITE_API_URL=http://localhost:8080/api (must end in /api)
+npm install
+npm run dev              # Vite on :5173
+```
+
+4. **Run tests**
+```bash
+./gradlew test                  # backend
+cd frontend && npx vitest run   # frontend
+```
 
 ## API Endpoints
 
@@ -149,14 +185,16 @@ It also creates 1 local (**Local 407**), 2 bands (**Los Reverb**, **Cuerdas Suel
 ## Testing
 
 ```bash
-./gradlew test                       # Run all 101 tests
+./gradlew test                       # Run all 107 backend tests
 ./gradlew test --tests JwtUtilTest   # Run specific test class
+cd frontend && npx vitest run        # Run the 32 frontend tests
 ```
 
-Tests cover:
+Backend tests cover:
 - **Services** (67 tests) — Business logic with mocked repositories
 - **Controllers** (27 tests) — Integration tests for auth and reservations
 - **Security** (7 tests) — JWT token generation and validation
+- **Demo data** (6 tests) — Seeder contents, idempotency and login with the demo users
 
 ## What I Learned
 
