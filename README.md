@@ -90,6 +90,20 @@ npm run dev            # Start Vite on :5173
 ./gradlew test
 ```
 
+## Demo data
+
+With the `demo` Spring profile the backend creates sample data on startup. It is idempotent: if the demo users already exist, nothing is created again. `docker compose up` activates this profile by default. When running with `./gradlew bootRun`, use `SPRING_PROFILES_ACTIVE=demo`.
+
+| User | Email | Password | Role in the demo |
+|------|-------|----------|------------------|
+| Ana García | `ana@local407.demo` | `demo1234` | Admin of the local, lends an amplifier |
+| Bruno Martínez | `bruno@local407.demo` | `demo1234` | Member of both bands, owns tomorrow's rehearsal |
+| Carla López | `carla@local407.demo` | `demo1234` | Member of Cuerdas Sueltas, borrows the amplifier |
+
+It also creates 1 local (**Local 407**), 2 bands (**Los Reverb**, **Cuerdas Sueltas**), 6 items, 1 confirmed rehearsal (tomorrow, 18:00-20:00) and 1 active loan.
+
+> ⚠️ These credentials are public and for local demos only. To start with an empty database, set `SPRING_PROFILES_ACTIVE=` (empty) in `.env`, or do not use the `demo` profile.
+
 ## API Endpoints
 
 ### Auth

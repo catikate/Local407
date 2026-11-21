@@ -46,6 +46,8 @@ services:
       - DB_PASSWORD=${MYSQL_PASSWORD:-local407-demo}
       - JWT_SECRET=${JWT_SECRET:-local407-demo-only-secret-key-change-me-0123456789}
       - SERVER_PORT=8080
+      # 'demo' seeds sample data (see README). Set SPRING_PROFILES_ACTIVE= (empty) in .env to disable it.
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE-demo}
       - MAIL_HOST=${MAIL_HOST:-smtp.gmail.com}
       - MAIL_PORT=${MAIL_PORT:-587}
       - MAIL_USERNAME=${MAIL_USERNAME:-}
