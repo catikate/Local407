@@ -4,21 +4,31 @@
 
 REST API + frontend for managing rehearsal space scheduling between multiple bands.
 
-## The Problem
+## The problem
 
-4 bands sharing 1 rehearsal space = constant scheduling conflicts, double bookings, and frustrated musicians. Built this to solve it.
+4 bands sharing 1 rehearsal space. Constant scheduling conflicts, double bookings, frustrated musicians. Built this to solve it.
 
-## Tech Stack
+## Stack
 
-- **Java 25** + **Spring Boot 4**
-- **Spring Security** — JWT authentication
-- **Spring Data JPA** + **Hibernate**
-- **Spring Mail** — HTML email notifications
-- **MySQL 9.5** (H2 for testing)
-- **React 19** + **Vite** + **Tailwind CSS** + **Material UI**
-- **Gradle** + **Docker Compose** (backend, frontend with nginx, MySQL, phpMyAdmin)
-- **JUnit 5** + **Mockito** — 107 backend tests · **Vitest** + **Testing Library** — 32 frontend tests
-- **GitHub Actions** — CI for backend and frontend
+| Layer | Technology |
+|---|---|
+| Backend | Java 25 + Spring Boot 4 |
+| Auth | Spring Security — JWT |
+| Persistence | Spring Data JPA + Hibernate + MySQL 9.5 |
+| Notifications | Spring Mail — HTML email templates |
+| Frontend | React 19 + Vite + Tailwind CSS |
+| Testing | JUnit 5 + Mockito (107 backend tests), Vitest + Testing Library (32 frontend tests) |
+| CI/CD | GitHub Actions + Docker Compose |
+
+## Architecture decisions
+
+**Layered architecture with clear separation.** Controllers handle HTTP, services own the business logic, repositories manage data access. This made the codebase easy to test — services are tested in isolation with mocked repositories.
+
+**Custom JWT authentication.** I wrote the JWT filter and token handling myself, using the `jjwt` library to sign and read tokens. This forced a real understanding of how stateless authentication works.
+
+**Approval workflow for full-day rehearsals.** Full-day rehearsals go through a state machine: pending → approved/rejected. All other bookings are confirmed automatically. Every new booking is first checked for time conflicts.
+
+**Scheduled tasks for overdue detection.** A Spring `@Scheduled` component runs periodically to detect overdue equipment loans and trigger notifications. No manual intervention required.
 
 ## Features
 
@@ -89,7 +99,7 @@ src/main/java/com/example/demo/
 ├── security/        # JWT filter, auth components
 ├── config/          # Demo data seeder (profile "demo")
 ├── dto/             # Request/Response objects
-├── exception/       # Custom exceptions + global handler
+├── exception/       # Custom exceptions
 └── scheduler/       # Scheduled tasks (overdue detection)
 
 frontend/src/
@@ -191,15 +201,16 @@ cd frontend && npx vitest run        # Run the 32 frontend tests
 ```
 
 Backend tests cover:
-- **Services** (67 tests) — Business logic with mocked repositories
+- **Services** (66 tests) — Business logic with mocked repositories
 - **Controllers** (27 tests) — Integration tests for auth and reservations
 - **Security** (7 tests) — JWT token generation and validation
 - **Demo data** (6 tests) — Seeder contents, idempotency and login with the demo users
+- **Application startup** (1 test) — The Spring context loads
 
 ## What I Learned
 
 - Designing a relational schema with complex relationships (Users ↔ Bands ↔ Bookings ↔ Loans)
-- Implementing JWT authentication from scratch (not just copy-paste)
+- Implementing JWT authentication with my own Spring Security filter and the `jjwt` library
 - Building a full notification system with email integration (Spring Mail + HTML templates)
 - Writing meaningful tests that catch real bugs
 - Setting up CI/CD that actually runs on every push
@@ -214,4 +225,4 @@ Backend tests cover:
 
 ---
 
-Built by [Catalina Viscoitaliano](https://github.com/catikate) — Backend developer based in Barcelona.
+Built by Catalina Viscoitaliano — Software engineer based in Barcelona.
