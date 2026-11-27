@@ -2,7 +2,7 @@
 
 [![CI/CD Pipeline](https://github.com/catikate/Local407/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/catikate/Local407/actions/workflows/ci.yml)
 
-REST API + frontend for managing rehearsal space scheduling between multiple bands.
+REST API and web client for managing rehearsal space scheduling between multiple bands.
 
 ## The problem
 
@@ -14,11 +14,12 @@ REST API + frontend for managing rehearsal space scheduling between multiple ban
 |---|---|
 | Backend | Java 25 + Spring Boot 4 |
 | Auth | Spring Security — JWT |
-| Persistence | Spring Data JPA + Hibernate + MySQL 9.5 |
+| Persistence | Spring Data JPA + Hibernate + MySQL 9.5 (H2 for tests) |
 | Notifications | Spring Mail — HTML email templates |
-| Frontend | React 19 + Vite + Tailwind CSS |
+| Frontend | React 19 + Vite + Tailwind CSS + Material UI |
 | Testing | JUnit 5 + Mockito (107 backend tests), Vitest + Testing Library (32 frontend tests) |
 | CI/CD | GitHub Actions + Docker Compose |
+| Infrastructure | Gradle + Docker Compose (backend, frontend with nginx, MySQL, phpMyAdmin) |
 
 ## Architecture decisions
 
@@ -215,14 +216,6 @@ Backend tests cover:
 - Writing meaningful tests that catch real bugs
 - Setting up CI/CD that actually runs on every push
 
-## Future Improvements
-
-- [ ] WebSocket real-time notifications
-- [ ] Recurring bookings
-- [ ] User roles and permissions (admin, member, guest)
-- [ ] Equipment maintenance tracking
-- [ ] File uploads for band photos and equipment images
-
 ---
 
-Built by Catalina Viscoitaliano — Software engineer based in Barcelona.
+Built by [Catalina Viscoitaliano](https://github.com/catikate) — Software engineer based in Barcelona.
