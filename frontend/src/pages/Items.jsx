@@ -1,14 +1,25 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import itemService from '../services/itemService';
 import { Button, Card, Badge } from '../components/ui';
+import ItemForm from '../components/items/ItemForm';
+import ItemDetailModal from '../components/items/ItemDetailModal';
+import PrestamoForm from '../components/prestamos/PrestamoForm';
 import { Plus, Package } from 'lucide-react';
 
 const Items = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('TODOS'); // TODOS, DISPONIBLE, PRESTADO
+  const [openItemForm, setOpenItemForm] = useState(false);
+  const [savingItem, setSavingItem] = useState(false);
+  const [detailItem, setDetailItem] = useState(null);
+  const [prestamoItemId, setPrestamoItemId] = useState(null);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -25,6 +36,36 @@ const Items = () => {
       console.error('Error loading items:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const showSuccess = (message) => {
+    setSuccess(message);
+    setTimeout(() => setSuccess(''), 3000);
+  };
+
+  const handleCreateItem = async (itemData) => {
+    try {
+      setSavingItem(true);
+      setError('');
+      await itemService.create(itemData);
+      setOpenItemForm(false);
+      showSuccess('Item creado correctamente');
+      await loadItems();
+    } catch (err) {
+      console.error('Error creating item:', err);
+      setOpenItemForm(false);
+      setError(err.response?.data?.message || 'Error al crear el item');
+    } finally {
+      setSavingItem(false);
+    }
+  };
+
+  const handlePrestamoClose = (created = false) => {
+    setPrestamoItemId(null);
+    if (created) {
+      showSuccess('Préstamo creado correctamente');
+      loadItems();
     }
   };
 
@@ -62,11 +103,26 @@ const Items = () => {
         <Button
           variant="primary"
           icon={Plus}
-          onClick={() => alert('Funcionalidad de añadir próximamente')}
+          onClick={() => setOpenItemForm(true)}
         >
           Añadir
         </Button>
       </div>
+
+      {/* Alerts */}
+      {error && (
+        <div className="mb-4 p-4 bg-error/10 border border-error/20 rounded-lg text-error flex items-center justify-between">
+          <span>{error}</span>
+          <button onClick={() => setError('')} className="text-error hover:text-error/80">
+            &times;
+          </button>
+        </div>
+      )}
+      {success && (
+        <div className="mb-4 p-4 bg-success/10 border border-success/20 rounded-lg text-success">
+          {success}
+        </div>
+      )}
 
       {/* Filtros */}
       <div className="flex gap-2 mb-6">
@@ -136,7 +192,7 @@ const Items = () => {
                     size="sm"
                     variant="secondary"
                     fullWidth
-                    onClick={() => alert('Ver detalles próximamente')}
+                    onClick={() => setDetailItem(item)}
                   >
                     Ver
                   </Button>
@@ -144,7 +200,9 @@ const Items = () => {
                     size="sm"
                     variant={item.prestado ? 'ghost' : 'primary'}
                     fullWidth
-                    onClick={() => alert('Funcionalidad de préstamo próximamente')}
+                    onClick={() =>
+                      item.prestado ? navigate('/prestamos') : setPrestamoItemId(item.id)
+                    }
                   >
                     {item.prestado ? 'Devolver' : 'Prestar'}
                   </Button>
@@ -175,11 +233,29 @@ const Items = () => {
           <Button
             variant="primary"
             icon={Plus}
-            onClick={() => alert('Funcionalidad de añadir próximamente')}
+            onClick={() => setOpenItemForm(true)}
           >
             Añadir Item
           </Button>
         </div>
+      )}
+
+      <ItemForm
+        open={openItemForm}
+        onClose={() => setOpenItemForm(false)}
+        onSubmit={handleCreateItem}
+        item={null}
+        loading={savingItem}
+      />
+
+      <ItemDetailModal item={detailItem} onClose={() => setDetailItem(null)} />
+
+      {prestamoItemId != null && (
+        <PrestamoForm
+          open
+          onClose={handlePrestamoClose}
+          initialItemId={prestamoItemId}
+        />
       )}
     </div>
   );

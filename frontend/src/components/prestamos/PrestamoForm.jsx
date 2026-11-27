@@ -8,7 +8,7 @@ import prestamoService from '../../services/prestamoService';
 import { Button } from '../ui';
 import { X, Package, User, Users, MapPin, Calendar, FileText } from 'lucide-react';
 
-const PrestamoForm = ({ open, onClose }) => {
+const PrestamoForm = ({ open, onClose, initialItemId = null }) => {
   const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [locales, setLocales] = useState([]);
@@ -36,6 +36,13 @@ const PrestamoForm = ({ open, onClose }) => {
       loadData();
     }
   }, [open]);
+
+  // Preselect the item when the form is opened from an item card
+  useEffect(() => {
+    if (open && initialItemId != null) {
+      setFormData(prev => ({ ...prev, itemId: String(initialItemId) }));
+    }
+  }, [open, initialItemId]);
 
   // Auto-fill destination when item is selected
   useEffect(() => {

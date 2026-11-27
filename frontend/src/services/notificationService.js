@@ -1,5 +1,9 @@
 import api from './api';
 
+// Evento que se dispara cuando cambia el número de notificaciones sin leer
+export const NOTIFICATIONS_CHANGED_EVENT = 'notifications:changed';
+const notifyChanged = () => window.dispatchEvent(new Event(NOTIFICATIONS_CHANGED_EVENT));
+
 // Helper para obtener headers con token
 const getAuthHeaders = () => {
   const token = localStorage.getItem('local407_token');
@@ -32,16 +36,19 @@ const notificationService = {
   // Marcar como leída
   markAsRead: async (notificationId, usuarioId) => {
     await api.patch(`/notifications/${notificationId}/read?usuarioId=${usuarioId}`, null, getAuthHeaders());
+    notifyChanged();
   },
 
   // Marcar todas como leídas
   markAllAsRead: async (usuarioId) => {
     await api.patch(`/notifications/usuario/${usuarioId}/read-all`, null, getAuthHeaders());
+    notifyChanged();
   },
 
   // Eliminar notificación
   delete: async (notificationId, usuarioId) => {
     await api.delete(`/notifications/${notificationId}?usuarioId=${usuarioId}`, getAuthHeaders());
+    notifyChanged();
   }
 };
 

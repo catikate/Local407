@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import bandaService from '../services/bandaService';
 import { Button, Card, Badge } from '../components/ui';
-import { Edit, LogOut, Music } from 'lucide-react';
+import { LogOut, Music } from 'lucide-react';
 
 const Profile = () => {
   const { user, logout } = useAuth();
@@ -85,14 +85,6 @@ const Profile = () => {
 
               {/* Botones de acción */}
               <div className="space-y-2 pt-4">
-                <Button
-                  variant="primary"
-                  icon={Edit}
-                  fullWidth
-                  onClick={() => alert('Funcionalidad de edición próximamente')}
-                >
-                  Editar Perfil
-                </Button>
                 <Button
                   variant="danger"
                   icon={LogOut}

@@ -4,26 +4,28 @@ React frontend for the Local407 space management application.
 
 ## Features
 
-- User authentication (login/register)
-- Locales management
-- Reservas (bookings) management
-- Invitaciones (invitations) management
-- JWT-based authentication
-- Responsive design
+- JWT authentication (login/register)
+- Locales, bandas and usuarios management
+- Reservas (bookings) with calendar view and approval requests
+- Items and préstamos (loans)
+- Notifications
+- Responsive design (sidebar on desktop, bottom navigation on mobile)
 
 ## Tech Stack
 
-- React 18
+- React 19
 - Vite
+- Tailwind CSS
+- Material UI (MUI)
 - React Router DOM
 - Axios
-- Modern CSS
+- Vitest + Testing Library
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18 or higher
+- Node.js 20.19 or higher (CI uses Node 22)
 - npm or yarn
 - Backend API running on `http://localhost:8080`
 
@@ -35,11 +37,13 @@ npm install
 
 ### Environment Variables
 
-Create a `.env` file in the root directory (already created):
+Copy `.env.example` to `.env`:
 
 ```
-VITE_API_URL=http://localhost:8080
+VITE_API_URL=http://localhost:8080/api
 ```
+
+`VITE_API_URL` must end in `/api`, because the backend routes are `/api/...`.
 
 ### Running the Application
 
@@ -64,28 +68,22 @@ The production-ready files will be in the `dist` directory.
 ```
 frontend/
 ├── src/
-│   ├── components/      # Reusable components
-│   │   ├── Navbar.jsx
-│   │   └── PrivateRoute.jsx
-│   ├── contexts/        # React contexts
-│   │   └── AuthContext.jsx
-│   ├── pages/          # Page components
-│   │   ├── Home.jsx
-│   │   ├── Login.jsx
-│   │   ├── Register.jsx
-│   │   ├── Locales.jsx
-│   │   ├── Reservas.jsx
-│   │   └── Invitaciones.jsx
-│   ├── services/       # API services
-│   │   ├── api.js
-│   │   ├── authService.js
-│   │   ├── localService.js
-│   │   ├── reservaService.js
-│   │   └── invitacionService.js
-│   ├── App.jsx
-│   ├── App.css
+│   ├── components/
+│   │   ├── auth/         # ProtectedRoute
+│   │   ├── features/     # EventCard, NotificationItem
+│   │   ├── items/        # ItemForm, ItemDetailModal
+│   │   ├── layout/       # Layout, Sidebar, TopBar, BottomNav
+│   │   ├── prestamos/    # PrestamoForm
+│   │   ├── reservas/     # CalendarView, ReservaForm, ReservaCard
+│   │   └── ui/           # Button, Card, Input, Badge
+│   ├── context/          # AuthContext
+│   ├── hooks/
+│   ├── pages/            # One file per route (auth/ holds Login and Register)
+│   ├── services/         # Axios API clients (api.js + one per resource)
+│   ├── utils/
+│   ├── App.jsx           # Routes
 │   └── main.jsx
-├── .env
+├── .env.example
 └── package.json
 ```
 
@@ -106,6 +104,7 @@ The frontend connects to the Spring Boot backend API. Make sure the backend is r
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build
 - `npm run lint` - Run ESLint
+- `npx vitest run` - Run the tests once
 
 ## License
 

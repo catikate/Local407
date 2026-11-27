@@ -1,15 +1,29 @@
+# Run the whole app with: docker compose up --build
+#   frontend  http://localhost:3000
+#   backend   http://localhost:8080/api
+#   phpMyAdmin http://localhost:8081
+#
+# The defaults below are for local demos only. To use your own values, copy
+# .env.example to .env and edit it (never use these defaults anywhere public).
 services:
   mysql:
-    image: 'mysql:latest'
+    image: 'mysql:9.5'
     environment:
       - MYSQL_DATABASE=${MYSQL_DATABASE:-mydatabase}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-local407-demo}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-local407-root-demo}
       - MYSQL_USER=${MYSQL_USER:-myuser}
     ports:
-      - '3306:3306'
+      - '127.0.0.1:3306:3306'
     volumes:
       - mysql_data:/var/lib/mysql
+    healthcheck:
+      # -h 127.0.0.1 forces TCP, so the temporary init server (socket only) does not count as ready
+      test: ['CMD-SHELL', 'mysqladmin ping -h 127.0.0.1 -u root -p"$$MYSQL_ROOT_PASSWORD" --silent']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
@@ -17,11 +31,43 @@ services:
       - PMA_HOST=mysql
       - PMA_PORT=3306
       - PMA_USER=${MYSQL_USER:-myuser}
-      - PMA_PASSWORD=${MYSQL_PASSWORD}
+      - PMA_PASSWORD=${MYSQL_PASSWORD:-local407-demo}
     ports:
-      - '8081:80'
+      - '127.0.0.1:8081:80'
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
+
+  backend:
+    build: .
+    environment:
+      - DB_URL=jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-mydatabase}
+      - DB_USERNAME=${MYSQL_USER:-myuser}
+      - DB_PASSWORD=${MYSQL_PASSWORD:-local407-demo}
+      - JWT_SECRET=${JWT_SECRET:-local407-demo-only-secret-key-change-me-0123456789}
+      - SERVER_PORT=8080
+      # 'demo' seeds sample data (see README). Set SPRING_PROFILES_ACTIVE= (empty) in .env to disable it.
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE-demo}
+      - MAIL_HOST=${MAIL_HOST:-smtp.gmail.com}
+      - MAIL_PORT=${MAIL_PORT:-587}
+      - MAIL_USERNAME=${MAIL_USERNAME:-}
+      - MAIL_PASSWORD=${MAIL_PASSWORD:-}
+    ports:
+      - '127.0.0.1:8080:8080'
+    depends_on:
+      mysql:
+        condition: service_healthy
+    # healthcheck comes from the Dockerfile
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - '127.0.0.1:3000:80'
+    depends_on:
+      backend:
+        condition: service_healthy
+    # healthcheck comes from frontend/Dockerfile
 
 volumes:
   mysql_data:
